@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"  xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>系统用户管理页面</title>
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+
+        //定义权限树的列属性
+        var columns = [[
+            {
+              field : 'id',
+                checkbox : true
+            },
+            {
+                title : '权限名称',
+                field : 'text',
+                width : 200
+            },{
+                title : '权限的访问url',
+                field : 'attributes.url',
+                width : 300,
+                formatter : function (value,row,index) {
+                    if (row.attributes.url){
+                        return "<span style='color: green'>"+row.attributes.url+"</span>";
+                    } else {
+                        return "";
+                    }
+
+                }
+            },{
+                title : '权限的标识',
+                field : 'attributes.code',
+                width : 200,
+                formatter : function (value,row,index) {
+                    if (row.attributes.code){
+                        return "<span style='color: sandybrown'>"+row.attributes.code+"</span>";
+                    } else {
+                        return "";
+                    }
+
+                }
+            }
+        ]];
+
+        //定义 操作工具栏
+        var toolbar = ['-',{
+           text : '添加权限',
+           iconCls : 'icon-add',
+            handler : addOperaton
+        },'-',{
+            text : '修改权限',
+            iconCls : 'icon-edit',
+            handler : editOperation
+        },'-',{
+            text : '删除权限',
+            iconCls : 'icon-cancel',
+            handler : deleteOperations
+        },'-',{
+            text : '展开所有权限',
+            iconCls : 'icon-undo',
+            handler : doExpandAll
+        },'-',{
+            text : '关闭所有权限',
+            iconCls : 'icon-redo',
+            handler : doColapseAll
+        },'-'];
+        $(function () {
+           //初始化权限树
+            $("#operationsList").treegrid({
+                idField : 'id',
+                treeField : 'text',
+                animate : true,
+                url : '/operations?code=0',
+                rownumbers : true,
+                columns : columns,
+                striped : true,
+                singleSelect : false,
+                onDblClickRow : function(row){
+                    // alert("row:"+row);
+                    //打开该节点
+                    $("#operationsList").treegrid('toggle',row.id);
+                }
+            });
+
+            //给保存按钮绑定点击事件
+            $(".saveOperation").click(function () {
+
+                // alert("data:"+data);
+                if (saveButton == "add"){
+                    //判断添加表单中输入的数据是否合法
+                    var f = $("#addOperationForm").form('validate');
+                    if (!f){
+                        return ;
+                    }
+                    if (!matchcode){
+                        return;
+                    }
+                    //得到添加表单中的数据
+                    var data = $("#addOperationForm").serialize();
+                    //发送ajax请求吧数据添加到数据库
+                    $.ajax({
+                        url : '/operation_add',
+                        type : 'post',
+                        dataType : 'text',
+                        data : data,
+                        success : function (result) {
+                            //关闭添加权限的窗口
+                            $("#addOperationWindow").dialog('close');
+                            //提示添加成功信息
+                            showMsg(result);
+
+                           reloadOperationList();
+                        },
+                        error : function () {
+                            $.messager.alert("提示信息",globalError,"info");
+                        }
+
+                    });
+                }else{
+                    //判断修改表单中输入的数据是否合法
+                    var f = $("#editOperationForm").form('validate');
+                    if (!f){
+                        return ;
+                    }
+                    if (!matchcode){
+                        return;
+                    }
+                    //得到表单中的数据
+                    var data = $("#editOperationForm").serialize();
+                    //发送ajax请求更新数据库
+                    // alert("edit:"+data);
+                    $.ajax({
+                       url : '/operation_update',
+                       type : 'put',
+                       dataType : 'text',
+                       data : data,
+                       success : function (result) {
+                           //关闭修改窗口
+                           $("#editOperationWindow").dialog('close');
+                           //提示需改成功信息
+                           showMsg(result);
+                           //刷新父节点
+                           reloadOperationList();
+                       } ,
+                        error : function () {
+                            $.messager.alert("提示信息",globalError,'info');
+                        }
+                    });
+
+                }
+            });
+            //给取消按钮绑定点击事件
+            $(".cancelOperation").click(function () {
+
+                if (cancelBut == "add"){
+                    //关闭添加权限窗口
+                    $("#addOperationWindow").dialog('close');
+                } else{
+                    //关闭修改权限窗口
+                    $("#editOperationWindow").dialog('close');
+                }
+
+            });
+
+        });
+
+        var cancelBut ="";
+        var saveButton ="";
+        var parent_id ;
+        var state ;
+        var globalError = "系统繁忙，请稍后重试......";
+        //=======================业务方法=================
+        //添加权限按钮触发的方法
+        function addOperaton(){
+            cancelBut = "add";
+            saveButton = "add";
+            //得到选择的节点
+            var rows = $("#operationsList").treegrid('getSelections');
+            if (rows.length != 1){
+                //提示选择一个节点
+              showMsg('请选择一行权限数据来进行操作!');
+                return ;
+            }
+            //得到选择的节点的id
+             parent_id = rows[0].id;
+            state = rows[0].state;
+            // alert("parent_id:"+rows[0].name);
+            //打开添加新权限的页面
+            $("#addOperationWindow").dialog('open');
+            //清空表单中的 内容
+            $("#addOperationForm").form('clear');
+            //设置上级权限的名称
+            $("#parent").val(rows[0].text);
+            $("#parent_id").val(parent_id);
+        }
+
+        //打开修改权限窗口
+        function editOperation(){
+            cancelBut = "edit";
+            saveButton = "edit";
+            //得到选择的节点信息
+            var rows = $("#operationsList").treegrid('getSelections');
+
+            if (rows.length != 1){
+                //提示用户选择一条数据进行修改
+              showMsg('<font style="color: red;">请选择一条数据进行操作!</font>');
+                return ;
+            }
+            //根节点不可修改
+            if (rows[0].id == '999999') {
+                //提示用户选择一条数据进行修改
+               showMsg('选择的数据无效<font style="color: red">医药采购系统权限</font>不可编辑!');
+                return ;
+            }
+            //得到当前节点的id
+            parent_id =rows[0].id;
+            //得到当前节点的state
+            state = rows[0].state;
+            //得到父节点
+            var parentNode = $("#operationsList").treegrid('getParent',rows[0].id);
+            // 打开修改窗口
+            $("#editOperationWindow").dialog('open');
+            //回显数据
+            $("#editOperationForm").form("load",{
+                id : rows[0].id,
+                name : rows[0].text,
+                url : rows[0].attributes.url,
+                code : rows[0].attributes.code
+            });
+            //设置权限下拉树的回显值
+            $("#editOperationParentId").combotree('setValue',parentNode.id);
+            $("#editOperationParentId").combotree('setText',parentNode.text);
+        }
+
+        //批量删除权限
+        function deleteOperations(){
+            //得到选择的权限数据
+            var rows = $("#operationsList").treegrid('getSelections');
+            //判断选择的数据是否合法
+            if (rows ==0 ){
+                //提示用户选择数据
+                showMsg("请选择要删除的权限数据！");
+                return;
+            }
+            //提示是否确认删除
+            $.messager.confirm("确认提示","你确认要删除选择的权限数据吗？",function (f) {
+                if (f){
+                    //确认删除
+                    //得到选择的所有权限的id
+                    var ids = new Array();
+                    for(var i = 0;i<rows.length;i++){
+                        var nodeId = rows[i].id;
+                        if ( nodeId == "999999") {
+                            showMsg('选择的数据无效<font style="color: red">医药采购系统权限</font>不可编辑!');
+                            return ;
+                        }
+                        ids.push(nodeId);
+                    }
+                    var id = ids.join(",");
+                    // alert("id:"+id);
+                    //发送ajax请求服务器，删除 选择的权限数据
+                    $.ajax({
+                        url : '/operation_delete',
+                        type : 'delete',
+                        dataType : 'text',
+                        data : 'ids='+id,
+                        success : function (result) {
+                            //提示操作成功提示
+                            showMsg(result);
+                            //清除选择的行
+                            // $("#operationsList").treegrid('clearSelections');
+                            //重新加载权限树
+                            reloadOperationList();
+                        },
+                        error : function () {
+                            //提示错误信息
+                            $.messager.aler("提示信息",globalError,'info');
+                        }
+                    });
+                } else {
+                    return ;
+                }
+            });
+        }
+        //展开所有节点
+        function doExpandAll(){
+            //展开所有权限
+            $("#operationsList").treegrid('expandAll',999999);
+        }
+        //折叠所有节点
+        function doColapseAll () {
+            //折叠所有权限
+            $("#operationsList").treegrid('collapseAll',999999);
+        }
+        //标记code是否可用
+        var matchcode = true;
+        //判断该code是否存在
+        function matchCode(code){
+            // alert("code:"+code);
+            $.ajax({
+               url : '/operationMatchCode/'+code,
+                type : 'get',
+                data : 'text',
+                success : function (result) {
+                    //判断该code是否存在：1.表示可用，0.表示不可用
+                    if (result == '1'){
+                        matchcode = true;
+                        //设置提示信息
+                        $(".macthcodeMsg").html("<font style='color: green;'>code可用</font>");
+                    } else {
+                        matchcode = false;
+                        $(".macthcodeMsg").html("<font style='color: red;'>code已存在</font>");
+                    }
+                },
+                error : function () {
+                    errorShow();
+                }
+            });
+        }
+
+        //=================全局方法================
+        function showMsg(msg){
+            //提示需改成功信息
+            $.messager.show({
+                title : '提示信息',
+                msg : msg,
+                timeout : 4000
+            });
+        }
+
+        function reloadOperationList(){
+            //重新刷新根节点
+            $("#operationsList").treegrid('reload',999999);
+            //清除选择的行
+            $("#operationsList").treegrid('clearSelections');
+        }
+
+    </script>
+</head>
+<body style="padding:5px;background:#eee;">
+
+    <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+        <a shiro:hasPermission ="operation_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addOperaton()" iconCls="icon-add">添加权限</a>
+        <a shiro:hasPermission ="operation_update" id="btn2" href="#" class="easyui-linkbutton" onclick="editOperation()" iconCls="icon-edit">修改权限</a>
+        <a shiro:hasPermission ="operation_delete" id="btn3" href="#" class="easyui-linkbutton" onclick="deleteOperations()" iconCls="icon-cancel">删除权限</a>
+          <a  href="#" class="easyui-linkbutton" onclick="doExpandAll()" iconCls="icon-undo">展开权限色</a>
+        <a   href="#" class="easyui-linkbutton" onclick="doColapseAll()" iconCls="icon-redo">折叠权限</a>
+    </div>
+    <!--加载权限树-->
+    <table id="operationsList"></table>
+
+       <!--添加权限信息 -->
+    <div id="addOperationWindow" modal=true title="添加权限信息" class="easyui-dialog" closed="true" style="width: 650px; height: 400px;" >
+        <form  id="addOperationForm" action="" method="post">
+            <input id="parent_id" type ="hidden" name="parentId"/>
+            <div class="formbody">
+                <div class="formtitle"><span>权限基本信息</span></div>
+                <ul class="forminfo">
+                    <li><label>权限的名称</label><input name="name" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="权限名称不能为空!"/></li>
+                    <li><label>权限访问url</label><input id="url" name="url"  type="text" class=" dfinput"/></li>
+                    <li><label>权限标识code</label><input name="code" type="text" class=" dfinput" onkeyup="matchCode(this.value)"   style="color: red"  /><i class="macthcodeMsg"></i></li>
+
+                    <li><label>上级权限名称</label><input id="parent"  type="text" class="dfinput" disabled="true" value=""/></li>
+
+                    <li><label>&nbsp;</label>
+                        <input  type="button" class="btn saveOperation" value="确认保存"/>
+                        <input type="button" class="btn cancelOperation" value="取消"/>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+    <!--修改权限信息 -->
+    <div id="editOperationWindow" modal=true title="修改权限信息" class="easyui-dialog" closed="true" style="width: 650px; height: 400px;" >
+        <form  id="editOperationForm" action="" method="post">
+            <input  type ="hidden" name="id"/>
+            <div class="formbody">
+                <div class="formtitle"><span>权限基本信息</span></div>
+                <ul class="forminfo">
+                    <li><label>权限的名称</label><input id="editOperationName" name="name" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="权限名称不能为空!"/></li>
+                    <li><label>权限访问url</label><input id="editOperationUrl"  name="url"  type="text" class=" dfinput"/></li>
+                    <li><label>权限标识code</label><input id="editOperationCode" name="code" type="text" class=" dfinput" onkeyup="matchCode(this.value)"  style="color: red"  /><i class="macthcodeMsg"></i></li>
+                    <!--valueField="id" textField ="text"-->
+                    <li><label>上级权限名称</label><input id="editOperationParentId" name="parentId" style="width: 250px" type="text" class= "easyui-combotree dfinput"
+                                                            editable="false" url ="/operations?code=0"  /></li>
+
+                    <li><label>&nbsp;</label>
+                        <input  type="button" class="btn saveOperation" value="确认保存"/>
+                        <input type="button" class="btn cancelOperation" value="取消"/>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

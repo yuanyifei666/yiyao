@@ -1,0 +1,524 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>医院信息管理页面</title>
+
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+
+        //定义datagrid数据表格的单元格  <!---->
+        var columns = [[
+            {
+                field : 'id',
+                checkbox : true,
+                width : 80
+            },{
+                field : 'mc',
+                title : '医院名称',
+                width : 200
+            },{
+                field : 'dz',
+                title : '通讯地址',
+                align : 'center',
+                width : 200
+            },{
+                field : 'yzbm',
+                title : '邮政编码',
+                align : 'center',
+                width : 120
+            },{
+                field : 'fyljg',
+                title  : '是否非营利性医疗机构',
+                align : 'center',
+                width : 150,
+                formatter : function (value,row,index) {
+                    //判断是否是非营利性医疗机构
+                    if (value == "null"||value == null){
+                        return '<span style="color: red">营利性医疗机构</span>';
+                    } else {
+                        return '<span style="color: green">非营利性医疗机构</span>';
+                    }
+                }
+            },{
+                field : 'dh',
+                title : '院办电话',
+                align : 'center',
+                width : 120
+            },{
+                field : 'ywsr',
+                title : '上年度业务收入',
+                align : 'center',
+                width : 120
+            }
+
+        ]];
+
+
+        //操作按钮
+        var toolbar = [
+            {
+                iconCls: 'icon-add',
+                text : '添加医院信息',
+                handler: addUserYY
+            }, '-',{
+            iconCls: 'icon-cancel',
+            text : '删除医院信息',
+            handler: deleteUserYY
+        }, '-',{
+            iconCls: 'icon-edit',
+            text : '修改医院信息',
+            handler: editUserYY
+        },'-',{
+            iconCls: 'icon-search',
+            text : '查询医院信息',
+            handler: searchUserYY
+        },'-'];
+
+        var button = "";
+
+        $(function () {
+            //页面加载完成动态加载医院信息列表
+            $("#userYYList").datagrid({
+                idField : 'id',
+                url : '/sys/useryys',
+                method : 'get',
+                columns :columns,
+                striped : true,
+                rownumbers : true,
+                pagination : true,
+                pageSize : 20,
+                pageList : [20,30,40,50]
+            });
+
+
+            //给保存添加按钮绑定点击事件
+            $(".saveUserYY").click(function(){
+
+                //判断当前打开的窗口是添加还是修改窗口
+                if (button == "add"){
+                    //当前是添加窗口
+                    //判断表单输入的数据是否合法
+                    var f = $("#addUserYYForm").form('validate');
+                    if (!f){
+                        return;
+                    }
+                    //系列化表单数据
+                    var data = $("#addUserYYForm").serialize();
+                    // alert("data:"+data);
+                    //使用ajax发送请求，把数据添加到后台数据控
+                    $.ajax({
+                        url : '/sys/userYY_add',
+                        type : 'post',
+                        dataType : 'text',
+                        data : data,
+                        success : function (result) {
+                            //关闭窗口
+                            $("#addUserYYWindow").dialog('close');
+                            //显示提示信息
+                            $.messager.show({
+                                title : '成功提示',
+                                msg : result,
+                                timeout : 4000
+                            });
+                            //刷新datagrid列表
+                            $("#userYYList").datagrid('reload');
+                        },
+                        error : function () {
+                            $.messager.alert("信息提示","系统繁忙，请稍后重试....","error");
+                        }
+                    });
+                }
+                if (button == "edit"){
+                    //当前是修改窗口
+                    //验证输入的表单数据 是否合法
+                    var validate = $("#editUserYYForm").form('validate');
+                    // alert("validate:"+validate);
+                    if (!validate){
+                        //不合法，不能提交
+                        return ;
+                    }
+                    // 系列化表单数据
+                    var data = $("#editUserYYForm").serialize();
+                    //发送请求更新服务器端的数据
+                    $.ajax({
+                        url : '/sys/userYY_update',
+                        type : 'put',
+                        dataType : 'text',
+                        data : data,
+                        success : function (result) {
+                            //关闭窗口
+                            $("#editUserYYWindow").dialog('close');
+                            //提示成功信息
+                            $.messager.show({
+                                title : '成功提示',
+                                msg : result,
+                                timeout : 4000
+                            });
+                            //刷新datagrid
+                            $("#userYYList").datagrid('reload');
+                            //清除选择的行
+                            $("#userYYList").datagrid('clearSelections');
+                        },
+                        error : function () {
+                            $.messager.alert("提示信息","系统繁忙，请稍后重试......",'info');
+                        }
+                    });
+                }
+            });
+
+            //给取消按钮绑定点击事件
+            $(".cancelUserYY").click(function () {
+                //判断当前窗口是添加还是修改
+                if (button == "edit") {
+                    //关闭修改窗口
+                    $("#editUserYYWindow").dialog('close');
+                }
+                if (button == "add"){
+                    //关闭窗口
+                    $("#addUserYYWindow").dialog('close');
+                }
+            });
+
+
+            //使用js的方式加载区域列表
+
+            $(".provinces").combobox({
+                url : '/sys/provinces',
+                valueField : "proId",
+                textField : 'proName',
+                onSelect : function (row) {
+                    //清除区域下拉框中的值
+                    $(".areas").combobox('clear');
+                    //置区域下拉款中的值
+                    $(".areas").combobox('reload','/sys/areas/0');
+                  //得到选中的区域id
+                    var pro_id = row.proId;
+                    //加载该省下的所有城市
+                    $(".citys").combobox({
+                        url : '/sys/citys/'+pro_id,
+                        valueField : "cityId",
+                        textField : 'cityName',
+                        onSelect : function (city) {
+                            $(".areas").combobox('clear');
+                            var city_id = city.cityId;
+                            console.info("city_id:"+city_id);
+                            //重新加载区域的列表]
+                            var url  = '/sys/areas/'+city_id;
+                            $(".areas").combobox('reload',url);
+                        }
+                    });
+                }
+            });
+
+            //========把表单中的数据变成json数据格式
+            $.fn.serializeObject = function()
+            {
+                var o = {};
+                var a = this.serializeArray();
+                $.each(a, function() {
+                    if (o[this.name]) {
+                        if (!o[this.name].push) {
+                            o[this.name] = [o[this.name]];
+                        }
+                        o[this.name].push(this.value || '');
+                    } else {
+                        o[this.name] = this.value || '';
+                    }
+                });
+                return o;
+            };
+
+            //给查询面板的查询按钮绑定点击事件
+            $("#searchUesrYY").click(function () {
+                //得到表单中的查询条件
+                var search = $("#searchUserYYForm").serializeObject();
+
+               //重新加载datagrid，带查询条件
+                $("#userYYList").datagrid('load',{
+                    mc : search.mc,
+                    yzbm : search.yzbm,
+                    dh: search.dh,
+                    lb: search.lb,
+                    proId: search.proId,
+                    cityId: search.cityId,
+                    areaId: search.areaId,
+                    fyljg: search.fyljg
+                });
+            });
+
+        //给查询面板的取消 按钮绑定点击事件
+            $("#cancelSearch").click(function () {
+               //关闭查询面板
+               $(".easyui-layout").layout('collapse','north');
+               //清空表单数据
+                $("#searchUserYYForm").form("clear");
+               pan = false;
+            });
+            //给清空查询条件绑定点击事件
+            $("#clearSearch").click(function () {
+                //清空表单中的数据
+                $("#searchUserYYForm").form("clear");
+            });
+
+            //联系电话验证
+            $.extend($.fn.validatebox.defaults.rules, {
+                minLength: {
+                    validator: function(value, param){
+                        if (value.length==11){
+                            return true;
+                        }
+                        return false;
+                    },
+                    message: '请输入合法的电话号码!'
+                }
+            });
+
+        });
+
+
+
+        //==================操作医院信息的业务方法====
+
+        var pan = false;
+
+        //添加医院信息
+        function addUserYY(){
+            button = "add";
+            //打开添加医院信息的窗口
+            $("#addUserYYWindow").dialog('open');
+            //清空表单
+            $("#addUserYYForm")[0].reset();
+        }
+        //删除医院信息
+        function deleteUserYY(){
+            //可以选择多条数据进行删除
+            //得到选择的行
+            var rows = $("#userYYList").datagrid('getSelections');
+            //判断用户是否有选择的行
+            if (rows.length == 0){
+                //提示要选中的删除的信息
+                $.messager.show({
+                    title : '信息提示',
+                    msg : '请选择要删除的医院数据!',
+                    timeout : 4000
+                });
+                return ;
+            }
+         //提示是否要删除信息
+            $.messager.confirm("删除提示","确认要删除选择的信息吗?",function (f) {
+                if (!f){
+                    return;
+                }
+                //遍历得到要删除的医院信息id
+                var ids = new Array();
+                for (var i = 0;i<rows.length ; i++){
+                    ids.push(rows[i].id);
+                }
+                var id = ids.join(',');
+                // alert("id:"+id);
+                // 发送ajax请求，删除数据
+                $.ajax({
+                    url : '/sys/userYY_delete',
+                    type : 'delete',
+                    dataType : 'html',
+                    data : 'id='+id,
+                    success : function (result) {
+                        //提示成功信息
+                        $.messager.alert("信息提示",result,"info");
+                        //刷新datagrid
+                        $("#userYYList").datagrid('reload');
+                        //清除选择的行
+                        $("#userYYList").datagrid('clearSelections');
+                    },
+                    error : function () {
+                        //提示错误信息
+                        $.messager.alert("信息提示","系统繁忙，请稍后重试.....","error");
+                    }
+                });
+            });
+        }
+        //修改医院信息
+        function  editUserYY() {
+            button = "edit";
+            //得到 选中的行
+            var rows = $("#userYYList").datagrid('getSelections');
+            //只能选择一行数据进行修改
+            if (rows.length != 1){
+                $.messager.show({
+                    title : '提示信息',
+                    msg : '请选择 一行数据进行修改!',
+                    timeout : 4000
+                });
+                return ;
+            }
+            //打开修改信息窗口
+            $("#editUserYYWindow").dialog('open');
+            //记载城市和地区的下拉款
+            var proId = rows[0].proId;
+            var cityId = rows[0].cityId
+            if (proId != null){
+                $(".citys").combobox('reload','/sys/citys/'+proId);
+            }
+           if (cityId != null){
+               $(".areas").combobox('reload','/sys/areas/'+cityId);
+           }
+
+            //回显医院信息数据
+            $("#editUserYYForm").form('load',rows[0]);
+
+        }
+        //查询医院信息
+        function searchUserYY(){
+            //盘多多面板是否已经打开
+            if (pan){
+                return;
+            } else{
+                //打开添加查询条件的面板
+                $(".easyui-layout").layout('expand','north');
+                pan = true;
+            }
+        }
+
+    </script>
+
+</head>
+<body class="easyui-layout">
+
+<div region="north" title="医院查询条件" split="true" iconCls="icon-search"  style="width:100px;height:130px;" collapsed="true">
+<form id="searchUserYYForm" action="" method="post">
+    <table>
+        <tr>
+            <td style="padding-left: 10px;">医院名称：</td>
+            <td >
+                <input type="text" name="mc" style="height: 28px;"/>
+            </td>
+            <td style="padding-left: 10px;">邮政编码：</td>
+            <td>
+                <input type="text" name="yzbm" class="easyui-numberbox" style="height: 28px;"/>
+            </td>
+            <td style="padding-left: 10px;">院办电话：</td>
+            <td>
+                <input type="text" name="dh" class="easyui-numberbox" style="height: 28px;"/>
+            </td>
+            <td style="padding-left: 69px;" align="left">医院类型：</td>
+            <td>
+                <input name="lb" editable="false" type="text" url="/sys/dictTypes?code=006" valueField="id" style="height: 28px;" textField="info" class="easyui-combobox" />
+            </td>
+        </tr>
+        <tr>
+            <td style="padding-left: 10px;">省:</td>
+            <td>
+                <!--<select name="proId" class=" provinces proId easyui-combobox" style="width: 146px;">-->
+                <!--<option value="0">&#45;&#45;请选择&#45;&#45;</option>-->
+                <!--</select>-->
+                <input   name="proId" style="width: 146px;" editable="false"  type="text" class="easyui-validatebox easyui-combobox provinces"/>
+            </td>
+            <td style="padding-left: 10px;">市:</td>
+            <td>
+                <input name="cityId" style="width: 146px;" editable="false" type="text" class="easyui-validatebox easyui-combobox  citys" valueField="cityId" textField="cityName"/>
+            </td>
+            <td style="padding-left: 10px;">区/县:</td>
+            <td>
+                <input name="areaId" style="width: 146px;" editable="false"  type="text" class="easyui-validatebox easyui-combobox areas"  valueField="areaId" textField="areaName"/>
+            </td>
+            <td style="padding-left: 10px;">
+                <select style="height: 28px;" name="fyljg">
+                    <option value="">-医疗机构类型-</option>
+                    <option value="null">营利性医疗机构</option>
+                    <option value="1">非营利性医疗机构</option>
+                </select>
+            </td>
+            <td style="padding-left: 10px;">
+                <a href="#" id="clearSearch" class="easyui-linkbutton" iconCls="icon-no">清空查询条件</a>
+                <!--添加查询条件-->
+                <a href="#" id="searchUesrYY" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                <a href="#" id="cancelSearch" class="easyui-linkbutton" iconCls="icon-no">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+</div>
+
+<div region="center" style="padding:5px;background:#eee;">
+    <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+        <a shiro:hasPermission ="userYY_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addUserYY()" iconCls="icon-add">添加医院信息</a>
+        <a shiro:hasPermission ="userYY_delete" id="btn2" href="#" class="easyui-linkbutton" onclick="deleteUserYY()" iconCls="icon-cancel">删除医院信息</a>
+        <a shiro:hasPermission ="userYY_update" id="btn3" href="#" class="easyui-linkbutton" onclick="editUserYY()" iconCls="icon-edit">修改医院信息</a>
+        <a shiro:hasPermission ="userYY_search" id="btn4" href="#" class="easyui-linkbutton" onclick="searchUserYY()" iconCls="icon-search">查询医院信息</a>
+    </div>
+    <!--展示医院信息列表-->
+    <table id="userYYList"></table>
+    <!--添加医院信息 -->
+    <div id="addUserYYWindow" modal=true title="添加医院信息" class="easyui-dialog" closed="true" style="width: 650px; height: 500px;" >
+        <form  id="addUserYYForm" action="" method="post">
+            <div class="formbody">
+                <div class="formtitle"><span>医院基本信息</span></div>
+                <ul class="forminfo">
+                    <li><label >医院名称</label><input name="mc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="医院名称必填!"/><i>医院名称不能为空</i></li>
+                    <li><label>邮政编码</label><input name="yzbm" type="text" class="dfinput" /></li>
+                    <li><label>医院地址</label></li>
+                    <li>省:<input  id="provinces" name="proId" editable="false"  type="text" class="easyui-validatebox easyui-combobox provinces"/>
+                        市:<input id="citys" name="cityId" editable="false" type="text" class="easyui-validatebox easyui-combobox citys" />
+                        区/县:<input id="areas" name="areaId" editable="false"  type="text" class="easyui-validatebox easyui-combobox areas"   valueField="areaId" textField="areaName"/>
+                    </li>
+
+                    <li><label style="width: 134px;">是否非营利性医疗机构</label><input name="fyljg" type="radio" value="" checked="checked" />是&nbsp;&nbsp;&nbsp;&nbsp;<input name="fyljg" type="radio" value="1" />否</cite></li>
+                    <li><label>院办电话</label><input name="dh" type="text" class="easyui-numberbox dfinput" validType="minLength"/><i>必填</i></li>
+                    <li><label>医院类型</label><input name="lb" editable="false" type="text" url="/sys/dictTypes?code=006" valueField="id" textField="info" class="easyui-combobox dfinput" /></li>
+                    <li><label>&nbsp;</label>
+                        <input  type="button" class="btn saveUserYY" value="确认保存"/>
+                        <input type="button" class="btn cancelUserYY" value="取消"/>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+    <!--修改医院信息 -->
+    <div id="editUserYYWindow" modal=true title="添加医院信息" class="easyui-dialog" closed="true" style="width: 650px; height: 500px;" >
+        <form  id="editUserYYForm" action="" method="post">
+            <input type="hidden" name="id" />
+            <div class="formbody">
+                <div class="formtitle"><span>医院基本信息</span></div>
+                <ul class="forminfo">
+                    <li><label>医院名称</label><input name="mc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="医院名称必填!"/><i>医院名称不能为空</i></li>
+                    <li><label>邮政编码</label><input name="yzbm" type="text" class="dfinput" /></li>
+                    <li><label>医院地址</label></li>
+                    <li>省:<input   name="proId" editable="false"  type="text" class="easyui-validatebox easyui-combobox provinces"/>
+                        市:<input name="cityId" editable="false" type="text" class="easyui-validatebox easyui-combobox  citys" valueField="cityId" textField="cityName"/>
+                        区/县:<input name="areaId" editable="false"  type="text" class="easyui-validatebox easyui-combobox areas"  valueField="areaId" textField="areaName"/>
+                    </li>
+
+                    <li><label style="width: 134px;">是否非营利性医疗机构</label><input name="fyljg" type="radio" value="null" checked="checked" />是&nbsp;&nbsp;&nbsp;&nbsp;<input name="fyljg" type="radio" value="1" />否</cite></li>
+                    <li><label>院办电话</label><input name="dh" type="text" class="easyui-numberbox dfinput" validType="minLength"/><i>必填</i></li>
+                    <li><label>医院类型</label><input name="lb" editable="false" type="text" url="/sys/dictTypes?code=006" valueField="id" textField="info" class="easyui-combobox dfinput" /></li>
+                    <li><label>&nbsp;</label>
+                        <input  type="button" class="btn saveUserYY" value="确认保存"/>
+                        <input type="button" class="btn cancelUserYY" value="取消"/>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

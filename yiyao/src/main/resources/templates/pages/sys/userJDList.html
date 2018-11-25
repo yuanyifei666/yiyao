@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"  xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>监督单位管理页面</title>
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+
+        //定义供应商列表信息的单元格
+        var columns = [[{
+            checkbox : true
+        },{
+           field : 'mc',
+           title : '监督单位名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'xlr',
+            title : '机构联系人',
+            width : 130,
+            align : 'center'
+        },{
+            field : 'dh',
+            title : '联系电话',
+            width : 180,
+            align : 'center'
+        },{
+            field : 'dzyx',
+            title : '电子邮箱',
+            width : 180,
+            align : 'center'
+        },{
+            field : 'yzbm',
+            title : '邮政编码',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'dz',
+            title : '机构地址',
+            width : 350
+        }]];
+        //操作按钮
+        var toolbar = ['-',{
+            iconCls: 'icon-add',
+            text : '添加监督单位',
+            handler: addUserJD
+        },'-',{
+            iconCls: 'icon-cancel',
+            text : '删除监督单位',
+            handler: deleteUserJD
+        },'-',{
+            iconCls: 'icon-edit',
+            text : '修改监督单位',
+            handler: editUserJD
+        },'-',{
+            iconCls: 'icon-search',
+            text : '查询监督单位',
+            handler: searchUserJD
+        },'-'];
+
+        //预加载
+        $(function () {
+            //使用datagrid动态加载监督单位的列表信息
+            $("#userJDList").datagrid({
+                idField : 'id',
+                url : '/sys/userjds',
+                method : 'get',
+                rownumbers : true,
+                striped : true,
+                columns : columns,
+                pagination : true,
+                pageList : [20,30,40]
+            });
+
+            //加载省的列表信息
+            $(".provinces").combobox({
+                url : '/sys/provinces',
+                valueField : "proId",
+                textField : 'proName',
+                onSelect : function (row) {
+                    //清除区域下拉框中的值
+                    $(".areas").combobox('clear');
+                    //置区域下拉款中的值
+                    $(".areas").combobox('reload','/sys/areas/0');
+                    //得到选中的区域id
+                    var pro_id = row.proId;
+                    //加载该省下的所有城市
+                    $(".citys").combobox({
+                        url : '/sys/citys/'+pro_id,
+                        valueField : "cityId",
+                        textField : 'cityName',
+                        onSelect : function (city) {
+                            $(".areas").combobox('clear');
+                            var city_id = city.cityId;
+                            console.info("city_id:"+city_id);
+                            //重新加载区域的列表]
+                            var url  = '/sys/areas/'+city_id;
+                            $(".areas").combobox('reload',url);
+                        }
+                    });
+                }
+            });
+
+            //取消按钮绑定点击事件
+            $(".cancelUserJD").click(function () {
+               if (userJDWindowState == "add"){
+                   //关闭添加监督单位窗口
+                   $("#addUserJDWindow").dialog('close');
+               }
+               if (userJDWindowState == "edit"){
+                   //关闭修改窗口
+                   $("#editUserJDWindow").dialog('close');
+               }
+
+            });
+            //给保存按钮绑定点事件
+            $(".saveUserJD").click(function () {
+               if (userJDWindowState == "add"){
+                   //当前打开的是添加窗口
+                   //判断表单数据的数据是否合法
+                   var f = $("#addUserJDForm").form('validate');
+                   if (!f){
+                       return ;
+                   }
+                   //得到表单数据
+                   var data = $("#addUserJDForm").serialize();
+                   //得到省，市，区域的名称
+                   var provinceName = $(".provinces").combobox('getText');
+                   var cityName = $(".citys").combobox('getText');
+                   var areaName = $(".areas").combobox('getText');
+                   var addre = $("#dz").val();
+                   //发送请求把数据添加到数据库
+                   $.ajax({
+                      url : '/sys/userjd_add',
+                      type : 'post',
+                      dataType : 'text',
+                      data : data+"&dz="+provinceName+"省"+cityName+"市"+areaName+addre,
+                      success : function (result) {
+                          //关闭提示窗口
+                          $("#addUserJDWindow").dialog('close');
+                          //提示信息
+                          showMsg(result);
+                          //刷新页面
+                          $("#userJDList").datagrid('reload');
+
+                      } ,
+                       error : function () {
+                           $.messager.alert("信息提示",globalErrorMsg,'info');
+                       }
+                   });
+               }
+               if (userJDWindowState == "edit"){
+                   //当前打开的是修改窗口，进行修改操作
+                   //判断表单输入的数据是否合法
+                   var f = $("#editUserJDForm").form('validate');
+                   if (!f){
+                       return;
+                   }
+                   //得到表单中数据
+                   var data = $("#editUserJDForm").serialize();
+                   //得到城市信息
+                   var provinceName = $("#editProvinces").combobox('getText');
+                   var cityName = $("#editCitys").combobox('getText');
+                   var areaName = $("#editAreas").combobox('getText');
+                   var addre = $("#editDz").val();
+                   //发送ajax请求把数据保存到数据库
+                   $.ajax({
+                      url : '/sys/userjd_update',
+                       type : 'put',
+                       dataType : 'text',
+                       data : data+"&dz="+provinceName+"省"+cityName+"市"+areaName+addre,
+                       success : function (result) {
+                           //关闭修改窗口
+                           $("#editUserJDWindow").dialog('close');
+                           //提示成功信息
+                           showMsg(result);
+                           //刷新页面
+                           $("#userJDList").datagrid('reload');
+                           //取消选择的行
+                           $("#userJDList").datagrid('clearSelections');
+                       },
+                       error : function () {
+                          $.messager.alert("提示信息",globalErrorMsg,'info');
+                       }
+
+                   });
+               }
+
+            });
+            //给查询面板的清空按钮绑定点击事件
+            $("#clearSearch").click(function () {
+               //清除表单中数据
+               $("#searchUserJDForm").form('clear');
+                clearArea();
+            });
+            //给查询面板中关闭按钮绑定点击事件
+            $("#cancelSearch").click(function () {
+               //关闭窗口
+                $("#userJDWindow").layout('collapse','north');
+                searchWindowState = false;
+            });
+
+            //========把表单中的数据变成json数据格式
+            $.fn.serializeObject = function()
+            {
+                var o = {};
+                var a = this.serializeArray();
+                $.each(a, function() {
+                    if (o[this.name]) {
+                        if (!o[this.name].push) {
+                            o[this.name] = [o[this.name]];
+                        }
+                        o[this.name].push(this.value || '');
+                    } else {
+                        o[this.name] = this.value || '';
+                    }
+                });
+                return o;
+            };
+
+            //给查询面板中的查询按钮绑定点击shijian
+            $("#searchUserJD").click(function(){
+                //得到表单中的数据
+                var data = $("#searchUserJDForm").serializeObject();
+                //重新根据查询条件加载监督单位的信息列表
+                $("#userJDList").datagrid('reload',{
+                    mc : data.mc,
+                    yzbm : data.yzbm,
+                    dh : data.dh,
+                    proId : data.proId,
+                    cityId : data.cityId,
+                    areaId : data.areaId
+                });
+
+
+            });
+        /////////////////////////////////////////////
+        });
+
+        //联系电话验证
+        $.extend($.fn.validatebox.defaults.rules, {
+            minLength: {
+                validator: function(value, param){
+                    if (value.length==param){
+                        return true;
+                    }
+                    return false;
+                },
+                message: '请输入合法数据!'
+            }
+        });
+
+        //=========监督单位业务方法============
+        //定义全局错误信息
+        var globalErrorMsg = "系统繁忙,请稍后重试........";
+        var userJDWindowState = "";
+        var searchWindowState = false;
+        //回调信息提示
+        function showMsg(result){
+            $.messager.show({
+                title : '信息提示',
+                msg : result,
+                timeout : 4000
+            });
+        }
+        //添加监督单位
+        function addUserJD(){
+            userJDWindowState = "add";
+            //打开添加监督单位信息窗口
+            $("#addUserJDWindow").dialog('open');
+            //清除表单数据
+            $("#addUserJDForm").form('clear');
+            //清城市和区域的列表信息
+            clearArea();
+        }
+        //删除选择的监督单位
+        function deleteUserJD(){
+            //得到选择要删除的监督单位
+            var rows = $("#userJDList").datagrid('getSelections');
+            if (rows.length == 0){
+                //提示请选择数据删除
+                showMsg("请选择要删除的监督单位！");
+                return ;
+            }
+          //提示是否确认删除数据
+            $.messager.confirm('提示信息',"确认删除选择的监督单位吗？",function (f) {
+               if (f){
+                   //得到选择要删除的信息的id
+                   var ids = new Array();
+                   for (var i = 0;i<rows.length;i++){
+                       ids.push(rows[i].id);
+                   }
+                   var id = ids.join(',');
+                   //发送请求删除数据
+                   $.ajax({
+                       url : '/sys/userjd_delete',
+                       type : 'delete',
+                       dataType : 'text',
+                       data : 'id='+id,
+                       success : function (result) {
+                           //提示成功信息
+                           showMsg(result);
+                           //刷新页面
+                           $("#userJDList").datagrid('reload');
+                           //清除选择的行
+                           $("#userJDList").datagrid('clearSelections');
+                       } ,
+                       error : function () {
+                           $.messager.alert("提示信息",globalErrorMsg,'info');
+                       }
+                   });
+               } else {
+                   return;
+               }
+
+            });
+
+        }
+
+        //修改监督单位信息
+        function editUserJD(){
+            userJDWindowState = "edit";
+            //得到选择要修改的行
+            var rows = $("#userJDList").datagrid('getSelections');
+            //判断是否只选择一条数据
+            if (rows.length != 1){
+                showMsg("请选择一条数据进行修改!");
+                return ;
+            }
+            //打开修改窗口
+            $("#editUserJDWindow").dialog('open');
+            var proId = rows[0].proId;
+            var cityId = rows[0].cityId;
+            if (!proId){
+                proId = 0;
+            }
+            if (!cityId){
+                cityId = 0;
+            }
+            //加载城市和区域的信息
+            $(".citys").combobox('reload','/sys/citys/'+proId);
+            $(".areas").combobox('reload','/sys/areas/'+cityId);
+            //回显数据
+            $("#editUserJDForm").form('load',rows[0]);
+        }
+
+        //查询监督单位信息
+        function searchUserJD(){
+           if (searchWindowState){
+               //面板已经打开
+               return;
+           }
+           searchWindowState = true;
+            //打开查询条件面板
+            $("#userJDWindow").layout('expand','north');
+            //清空表单的内容
+            $("#searchUserJDForm").form('clear');
+            clearArea();
+        }
+        //清空城市和区域的信息列表
+        function clearArea(){
+            //清城市和区域的列表信息
+            $(".citys").combobox('reload','/sys/citys/0');
+            $(".areas").combobox('reload','/sys/areas/0');
+        }
+    </script>
+</head>
+<body id="userJDWindow"class="easyui-layout">
+
+<!--查询条件-->
+    <div region="north" title="监督机构查询条件" split="true" iconCls="icon-search"  style="width:100px;height:130px;" collapsed="true">
+    <form id="searchUserJDForm" action="" method="post">
+        <table>
+            <tr>
+                <td style="padding-left: 10px;">监督单位名称：</td>
+                <td >
+                    <input type="text" name="mc" style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 10px;">邮政编码：</td>
+                <td>
+                    <input type="text" name="yzbm" class="easyui-numberbox" style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 10px;">联系电话：</td>
+                <td>
+                    <input type="text" name="dh" class="easyui-numberbox" style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 10px;">
+                    <a href="#" id="clearSearch" class="easyui-linkbutton" iconCls="icon-no">清空查询条件</a>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-left: 10px;">省:</td>
+                <td>
+
+                    <input   name="proId" style="width: 146px;" editable="false"  type="text" class="easyui-validatebox easyui-combobox provinces"/>
+                </td>
+                <td style="padding-left: 10px;">市:</td>
+                <td>
+                    <input name="cityId" style="width: 146px;" editable="false" type="text" class="easyui-validatebox easyui-combobox  citys" valueField="cityId" textField="cityName"/>
+                </td>
+                <td style="padding-left: 10px;">区/县:</td>
+                <td>
+                    <input name="areaId" style="width: 146px;" editable="false"  type="text" class="easyui-validatebox easyui-combobox areas"  valueField="areaId" textField="areaName"/>
+                </td>
+
+                <td style="padding-left: 10px;">
+                    <!--添加查询条件-->
+                    <a href="#" id="searchUserJD" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                    <a href="#" id="cancelSearch" class="easyui-linkbutton" iconCls="icon-no">取消</a>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+</div>
+
+    <div region="center" style="padding:5px;background:#eee;">
+        <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+            <a shiro:hasPermission ="userJD_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addUserJD()" iconCls="icon-add">添加监督单位</a>
+            <a shiro:hasPermission ="userJD_delete" id="btn2" href="#" class="easyui-linkbutton" onclick="deleteUserJD()" iconCls="icon-cancel">删除监督单位</a>
+            <a shiro:hasPermission ="userJD_update" id="btn3" href="#" class="easyui-linkbutton" onclick="editUserJD()" iconCls="icon-edit">修改监督单位</a>
+            <a shiro:hasPermission ="userJD_search" id="btn4" href="#" class="easyui-linkbutton" onclick="searchUserJD()" iconCls="icon-search">查询监督单位</a>
+        </div>
+        <!--显示监督单位的信息列表-->
+        <table id="userJDList"></table>
+
+        <!--添加监督单位信息 -->
+        <div id="addUserJDWindow" modal=true title="添加监督信息" class="easyui-dialog" closed="true" style=" width: 650px; height: 600px;" >
+            <form  id="addUserJDForm" action="" method="post">
+                <div class="formbody">
+                    <div class="formtitle"><span>监督单位基本信息</span></div>
+                    <ul class="forminfo">
+                        <li><label>监督单位名称</label><input name="mc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="监督单位名称必填!"/></li>
+                        <li><label>机构联系人</label><input name="xlr" type="text" class=" dfinput" required="true" /></li>
+                        <li><label>联系电话</label><input name="dh" type="text" class="easyui-validatebox easyui-numberbox dfinput" validType="minLength[11]" required="true" missingMessage="联系电话必填!"/></li>
+                        <li><label>邮政编码</label><input name="yzbm" type="text" class="dfinput easyui-numberbox" validType="minLength[6]"/></li>
+                        <li><label>电子邮箱</label><input name="dzyx" type="text" class="dfinput" /></li>
+                        <li><label>机构地址</label></li>
+                        <li>省:<input  id="provinces" name="proId" editable="false"  type="text" class="easyui-validatebox easyui-combobox provinces"/>
+                            市:<input id="citys" name="cityId" editable="false" type="text" class="easyui-validatebox easyui-combobox citys" />
+                            区/县:<input id="areas" name="areaId" editable="false"  type="text" class="easyui-validatebox easyui-combobox areas"   valueField="areaId" textField="areaName"/>
+                        </li>
+                        <li><label>具体街道：</label><input id="dz" type="text" class="dfinput" required="true" missingMessage="详细地址必填！" /></li>
+
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveUserJD" value="确认保存"/>
+                            <input type="button" class="btn cancelUserJD" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!--修改监督单位信息 -->
+        <div id="editUserJDWindow" modal=true title="修改监督信息" class="easyui-dialog" closed="true" style=" width: 650px; height: 600px;" >
+            <form  id="editUserJDForm" action="" method="post">
+                <input type="hidden" name="id"/>
+                <div class="formbody">
+                    <div class="formtitle"><span>监督单位基本信息</span></div>
+                    <ul class="forminfo">
+                        <li><label>监督单位名称</label><input name="mc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="监督单位名称必填!"/></li>
+                        <li><label>机构联系人</label><input name="xlr" type="text" class=" dfinput" required="true" /></li>
+                        <li><label>联系电话</label><input name="dh" type="text" class="easyui-validatebox easyui-numberbox dfinput" validType="minLength[11]" required="true" missingMessage="联系电话必填!"/></li>
+                        <li><label>邮政编码</label><input name="yzbm" type="text" class="dfinput easyui-numberbox" validType="minLength[6]"/></li>
+                        <li><label>电子邮箱</label><input name="dzyx" type="text" class="dfinput" /></li>
+                        <li><label>机构地址</label></li>
+                        <li>省:<input  id="editProvinces" name="proId" editable="false"  type="text" class="easyui-validatebox easyui-combobox provinces"/>
+                            市:<input id="editCitys" name="cityId" editable="false" type="text" class="easyui-validatebox easyui-combobox citys"  valueField="cityId" textField ="cityName" />
+                            区/县:<input id="editAreas" name="areaId" editable="false"  type="text" class="easyui-validatebox easyui-combobox areas"   valueField="areaId" textField="areaName"/>
+                        </li>
+                        <li><label>具体街道：</label><input id="editDz" type="text" class="dfinput" required="true" missingMessage="详细地址必填！" /></li>
+
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveUserJD" value="确认保存"/>
+                            <input type="button" class="btn cancelUserJD" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</body>
+</html>

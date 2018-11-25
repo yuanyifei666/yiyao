@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"  xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+     <meta charset="UTF-8">
+    <title>系统角色管理页面</title>
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <!--引入ztree相关的开发依赖-->
+    <link rel="stylesheet" th:href="@{/js/ztree/css/demo.css}" type="text/css">
+    <link rel="stylesheet" th:href="@{/js/ztree/css/zTreeStyle/zTreeStyle.css}" >
+    <script type="text/javascript" th:src="@{/js/ztree/js/jquery.ztree.all-3.5.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+
+        //定义角色列表的属性列
+        var columns = [[
+            {
+                checkbox : true
+            },{
+                title : '角色名称',
+                field : 'rolename',
+                width : 180,
+                align : 'center'
+            },{
+                title : '角色所属的用户类型',
+                field : 'info',
+                width : 130,
+                align : 'center',
+                formatter : function (value,row,index) {
+                    if (row.groupid == '0'){
+                        //系统管理员
+                        return '<span style="color: red">'+value+'</span>';
+                    }
+                    if (row.groupid == '1'){
+                        //系统管理员
+                        return '<span style="color: blueviolet">'+value+'</span>';
+                    }
+                    if (row.groupid == '2'){
+                        //系统管理员
+                        return '<span style="color: green">'+value+'</span>';
+                    }
+                    if (row.groupid == '3'){
+                        //系统管理员
+                        return '<span style="color: #e7852b">'+value+'</span>';
+                    }
+                }
+            },{
+                title : '系统说明',
+                field : 'discription',
+                align : 'center',
+                width : 550
+            }
+        ]];
+
+        //定义操作菜单栏
+        var toolbar = [
+            '-',{
+                text : '添加角色信息',
+                iconCls : 'icon-add',
+                handler : addSysRole
+            },'-',{
+                text : '删除角色信息',
+                iconCls : 'icon-cancel',
+                handler : deleteSysRole
+            },'-',{
+                text : '修改角色/<font style="color: green">角色授权</font>',
+                iconCls : 'icon-sum',
+                handler : editSysRole
+            },'-'
+        ];
+       //预加载
+        $(function () {
+            //初始化权限树
+            var setting = {
+                check: {
+                    enable: true
+                },
+                data: {
+                    simpleData: {
+                        enable: true
+                    }
+                }
+            };
+            var zNodes ;
+            //通过ajax请求得到权限的列表
+            $.ajax({
+                url : '/operationsZtree',
+                type : 'get',
+                dataType : 'json',
+                success : function(result){
+                    //加载树
+                    zNodes =  result;
+                    console.info("zNodes:"+zNodes);
+                    //使用ztree来实现权限树的展现
+                    $.fn.zTree.init($("#operations"), setting, zNodes);
+                    $.fn.zTree.init($("#editOperations"), setting, zNodes);
+                },
+                error : function () {
+                    $.messager.alert("信息提示",gloErrMsg,'info');
+                }
+            });
+           //加载系统角色列表
+            $("#sysRoleList").datagrid({
+               idField : 'id',
+                url : '/sys/sysRoles',
+                method : 'get',
+                striped : true,
+                columns : columns
+
+            });
+
+            //给保存按钮绑定点击事件
+            $(".saveSysRole").click(function () {
+                if (sysRoleWindow == "add") {
+                    //进行系统角色添加处理
+                    // 验证 表单中输入的数据是否合法
+                    var f = $("#addSysRoleForm").form('validate');
+                    if (!f){
+                        return;
+                    }
+                    //得到权限树选择的数据
+                    var ztreeObj = $.fn.zTree.getZTreeObj("operations");
+                    var nodes = ztreeObj.getCheckedNodes(true);
+                    // console.info("nodes:"+nodes);
+                    // alert("length--->"+nodes[0].id);
+                    var operationIds = new Array();
+                    for (var i = 0;i<nodes.length ;i++){
+                        operationIds.push(nodes[i].id);
+                    }
+                    //验证通过则发送请求把数据添加到数据库
+                    //得到表单中的数据
+                    var data = $("#addSysRoleForm").serialize();
+                    // alert("data:"+data);
+                    //发送请求吧数据添加到数据库
+                    $.ajax({
+                       url : '/sys/sysRole_add',
+                        type : 'post',
+                        dataType : 'text',
+                        data : data+"&operations="+operationIds,
+                        success : function (result) {
+                           //关闭窗口
+                            $("#addSysRoleWindow").dialog('close');
+                            //提示添加成功信息
+                            showMsg(result);
+                            //属性页面
+                            $("#sysRoleList").datagrid('reload');
+                        },
+                        error : function () {
+                            //提示信息
+                            $.messager.alert("提示信息",gloErrMsg,'info');
+                        }
+
+                    });
+
+                    $("#addSysRoleWindow").dialog('close');
+                }else{
+                   //校验表单中输入的数据是否合法
+                    var f = $("#editSysRoleForm").form('validate');
+                    if (!f){
+                        return;
+                    }
+                    //得到权限树选择的数据
+                    var ztreeObj = $.fn.zTree.getZTreeObj("editOperations");
+                    var nodes = ztreeObj.getCheckedNodes(true);
+                    // console.info("nodes:"+nodes);
+                    // alert("length--->"+nodes[0].id);
+                    var operationIds = new Array();
+                    for (var i = 0;i<nodes.length ;i++){
+                        operationIds.push(nodes[i].id);
+                    }
+                    //得到表单中的数据
+                    var data = $("#editSysRoleForm").serialize();
+
+                    // alert("data:"+data);
+                    //发送请求更新数据
+                    $.ajax({
+                       url : '/sys/sysRole_update',
+                        type : 'put',
+                        dataType : 'text',
+                        data : data+"&operations="+operationIds,
+                        success : function (result) {
+                           //关闭修改窗口
+                            $("#editSysRoleWindow").dialog('close');
+                            //提示修改成功信息
+                            showMsg(result);
+                            //重新加载角色列表数据
+                            $("#sysRoleList").datagrid('reload');
+                            //清除选择的行
+                            $("#sysRoleList").datagrid('clearSelections');
+                        },
+                        error : function () {
+                            $.messager.alert("信息提示",gloErrMsg,'info');
+                        }
+                    });
+                }
+            });
+            //给关闭按钮绑定点击事件
+            $(".cancelSysRole").click(function () {
+                if (sysRoleWindow == "add") {
+                    //关闭添加窗口
+                    $("#addSysRoleWindow").dialog('close');
+                }else{
+                    //关闭修改窗口
+                    $("#editSysRoleWindow").dialog('close');
+                }
+
+            });
+
+        });
+        //定义标记属性
+        var sysRoleWindow = "";
+        var gloErrMsg = "系统繁忙，请稍后重试.......";
+
+        //============业务方法===============
+        //添加角色信息
+        function addSysRole(){
+            sysRoleWindow = "add";
+            //打开添加窗口
+            $("#addSysRoleWindow").dialog('open');
+            //清除表单中的数据
+            $("#addSysRoleForm").form('clear');
+            //清空权限树的
+            // var t = $("#operations").combotree('tree');
+            // var roots = t.tree('getRoots');
+            // console.info("roots:"+roots);
+            // t.tree('uncheck',roots[0].target);
+            //展开所有节点
+            // t.tree('expandAll',roots[0].target);
+        }
+
+        //批量删除角色
+        function deleteSysRole(){
+            //得到选择的角色数据
+            var rows = $("#sysRoleList").datagrid('getSelections');
+            //判断是否有选择要删除的数据
+            if(rows.length == 0){
+                showMsg("请选择要删除的角色!");
+                return ;
+            }
+            //提示是否要删除数据
+            $.messager.confirm('提示信息','是否要删除选择的角色信息?',function (f) {
+                if (f){
+                    //得到选择的角色id
+                    var ids = new Array();
+                    for (var i = 0;i<rows.length;i++){
+                        ids.push(rows[i].id);
+                    }
+                    var id = ids.join(',');
+                    // alert("ids:"+id);
+                    //发送ajax请求删除数
+                    $.ajax({
+                        url : '/sys/sysRole_delete',
+                        type : 'delete',
+                        dataType : 'text',
+                        data : 'id='+id,
+                        success : function (result) {
+                            //提示成功信息
+                            showMsg(result);
+                            //刷新数据表格
+                            $("#sysRoleList").datagrid('reload');
+                            //清除选择的行
+                            $("#sysRoleList").datagrid('clearSelections');
+                        },
+                        error : function () {
+                            //提示信息
+                            $.messager.alert("提示信息",gloErrMsg,'info');
+                        }
+                    });
+                }else {
+                    return;
+                }
+            });
+        }
+
+        //修改系统角色
+        function editSysRole() {
+            sysRoleWindow = "edit";
+            //得到要修改的角色
+            var rows  = $("#sysRoleList").datagrid('getSelections');
+            //判断是否有选择的数据
+            if (rows.length != 1){
+                showMsg("请选择一行数据进行修改");
+                return;
+            }
+            //打开修改窗口
+            $("#editSysRoleWindow").dialog('open');
+            //回显数据
+            var role = rows[0];
+            $("#editSysRoleForm").form('load',{
+                id : role.id,
+                rolename : role.rolename,
+                groupid : role.groupid,
+                discription : role.discription
+            });
+            //展开权限树operations
+            var treeObj = $.fn.zTree.getZTreeObj("editOperations");
+           treeObj.expandAll(true);
+            treeObj.checkAllNodes(false);//取消所有选中的节点
+           var operationNode = role.operations;
+           if (operationNode != null){
+               //回显该角色有的权限
+               //得到所有的节点列表
+               var nodes = treeObj.getNodes();
+               var nodes1 = treeObj.transformToArray(nodes);
+               //遍历所有的节点
+               for(var j = 0;j<operationNode.length;j++){
+                   for(var i = 0 ;i<nodes1.length;i++){
+                       //得到该角色的权限并选中
+                       if(operationNode[j] == nodes1[i].id){
+                           treeObj.checkNode(nodes1[i],true);
+                       }
+
+                   }
+               }
+           }
+
+        }
+
+        // /========= 全局处理方法=======
+        function showMsg(msg){
+            //提示信息
+            $.messager.show({
+               title : '提示信息',
+                msg : msg,
+                timeout : 4000
+            });
+        }
+
+    </script>
+</head>
+<body style="padding:5px;background:#eee;">
+    <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+        <a shiro:hasPermission ="sysRole_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addSysRole()" iconCls="icon-add">添加角色信息</a>
+        <a shiro:hasPermission ="sysRole_delete" id="btn2" href="#" class="easyui-linkbutton" onclick="deleteSysRole()" iconCls="icon-cancel">删除角色信息</a>
+        <a shiro:hasPermission ="sysRole_update" id="btn3" href="#" class="easyui-linkbutton" onclick="editSysRole()" iconCls="icon-sum">修改角色/<font style="color: green">角色授权</font></a>
+    </div>
+    <!--加载系统的角色列表信息-->
+    <table id="sysRoleList"></table>
+
+    <!--添加角色信息 -->
+    <div id="addSysRoleWindow"  modal=true title="添加角色信息" class="easyui-dialog" closed="true" style="width: 561px; height: 718px;" >
+        <form  id="addSysRoleForm" action="" method="post">
+            <div class="formbody">
+                <div class="formtitle"><span>系统角色基本信息</span></div>
+                <ul class="forminfo">
+                    <li><label>角色的名称</label><input name="rolename" type="text" class=" dfinput easyui-validatebox" required="true" missingMessage="角色名称不能为空!"/></li>
+                    <li><label>所属用户类型</label><input id="groupid" name="groupid"  type="text" class="easyui-combobox dfinput"
+                                                    url="/sys/dictTypes?code=s01" valueField="dictcode" textField="info" editable="false"/></li>
+                    <li><label>角色说明</label><input name="discription" type="text" class="dfinput"/></li>
+
+                    <!--<input id="operations" name="operations"  type="text"  style="width: 345px" class="easyui-combotree dfinput" url="/operations?code=0" multiple="true" editable="false" value=""/></li>-->
+                    <li><label>分配权限</label><ul id="operations" name="operations"  class="ztree"></ul></li>
+
+                    <li><label>&nbsp;</label>
+                        <input  type="button" class="btn saveSysRole" value="确认保存"/>
+                        <input type="button" class="btn cancelSysRole" value="取消"/>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+    <!--修改角色信息 -->
+    <div id="editSysRoleWindow" modal=true title="修改角色信息" class="easyui-dialog" closed="true" style="width: 561px; height: 718px;" >
+        <form  id="editSysRoleForm" action="" method="post">
+            <input type="hidden" name="id"/>
+            <div class="formbody">
+                <div class="formtitle"><span>系统角色基本信息</span></div>
+                <ul class="forminfo">
+                    <li><label>角色的名称</label><input name="rolename" type="text" class=" dfinput easyui-validatebox" required="true" missingMessage="角色名称不能为空!"/></li>
+                    <li><label>所属用户类型</label><input  name="groupid"  type="text" class="easyui-combobox dfinput"
+                                                    url="/sys/dictTypes?code=s01" valueField="dictcode" textField="info" editable="false"/></li>
+                    <li><label>角色说明</label><input name="discription" type="text" class="dfinput"/></li>
+                    <!--<input id="editOperations"  name="operations"  type="text"  style="width: 345px" class="easyui-combotree dfinput" url="/operations?code=0" multiple="true" editable="false" value=""/>-->
+                    <li><label>分配权限</label><ul id="editOperations" name="operations"  class="ztree"></ul></li>
+                    <li><label>&nbsp;</label>
+                        <input  type="button" class="btn saveSysRole" value="确认保存"/>
+                        <input type="button" class="btn cancelSysRole" value="取消"/>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

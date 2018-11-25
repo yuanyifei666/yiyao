@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"  xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>数字字典页面</title>
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+    <script type ="text/javascript" th:inline="none">
+
+        //定义字典类型列表单元格
+        var typeColumns = [[
+            {
+                checkbox : true
+            },{
+               title : '字典类型代码',
+                field : 'typecode',
+                width : 100,
+                align : 'center'
+            },{
+                title : '字典类型名称',
+                field : 'typename',
+                width : 200,
+                align : 'center'
+            },{
+                title : '字典类型描述',
+                field : 'remark',
+                width : 250
+            }
+        ]];
+
+        //定义字典名称类表单元格属性
+        var dictInfoColumns = [[
+            {
+                checkbox : true
+            },{
+                title : '字典类型代码',
+                field : 'typecode',
+                width : 100,
+                align : 'center'
+            },{
+                title : '字典名称',
+                field : 'info',
+                width : 150,
+                align : 'center'
+            },{
+                title : '字典说明',
+                field : 'remark',
+                width : 250
+            }
+        ]];
+
+        //定义字典工具栏
+        var dictTypeToolbar = ['-',{
+            iconCls: 'icon-add',
+            text : '添加字典类型',
+            handler: addDictType
+        },'-',{
+            iconCls: 'icon-cancel',
+            text : '删除字典类型',
+            handler: deleteDictType
+        },'-',{
+            iconCls: 'icon-edit',
+            text : '修改字典类型',
+            handler: editDictType
+        },'-',{
+            iconCls: 'icon-search',
+            text : '查看字典信息',
+            handler: searchDictType
+        },'-'];
+
+        //字典类型工具栏
+        var dictInfoToolbar = ['-',{
+            iconCls: 'icon-add',
+            text : '添加字典信息',
+            handler: addDictInfo
+        },'-',{
+            iconCls: 'icon-cancel',
+            text : '删除字典信息',
+            handler: deleteDictInfo
+        },'-',{
+            iconCls: 'icon-edit',
+            text : '修改字典信息',
+            handler: editDictInfo
+        },'-'];
+
+        $(function () {
+           //加载字典类型列表信息
+            $("#dictTypeList").datagrid({
+               idField : 'id',
+                url : '/sys/dicttypes',
+                method : 'get',
+                rownumbers : true,
+                striped :  true,
+                columns : typeColumns,
+                onDblClickRow : function (rowIndex, rowData) {
+                    typecode = rowData.typecode;
+                    typename = rowData.typename;
+                    //根据字典类型 的typecode加载给类型下的所有字典
+                    loadDictInfo(typecode);
+                }
+            });
+
+            //给保存按钮绑定点击事件
+            $(".saveDictType").click(function () {
+               if (dictTypeWindow == "add"){
+                   if (!matchTypeCode){
+                       return;
+                   }
+                   //当前窗口是添加窗口
+                   //判断表单中输入的数据是否合法
+                   var f = $("#addDictTypeForm").form('validate');
+                   if (!f){
+                       return;
+                   }
+                   //得到表单中的数据
+                   var data = $("#addDictTypeForm").serialize();
+                   //发送ajax请求把数据保存到数据库
+                   $.ajax({
+                       url : '/sys/dicttype_add',
+                       type : 'post',
+                       dataType : 'text',
+                       data : data,
+                       success : function (result) {
+                           //关闭添加窗口
+                           $("#addDictTypeWindow").dialog('close');
+                           //重新加载页面数据
+                           $("#dictTypeList").datagrid('reload');
+                           //提示信息
+                           showMsg(result);
+                       },
+                       error : function(){
+                            errorShow();
+                       }
+                   });
+               }
+               if (dictTypeWindow == 'edit'){
+                   //修改字典类型
+                   var d = $("#editDictTypeForm").form('validate');
+                   if (!d || !matchTypeCode){
+                       return;
+                   }
+                    //得到表单中输入的数据
+                   var data = $("#editDictTypeForm").serialize();
+                   //发送请求把数据更新到数据库
+                   $.ajax({
+                      url : '/sys/dicttype_update',
+                      type: 'put',
+                      dataType : 'text',
+                      data : data,
+                      success : function (result) {
+                          //关闭窗口
+                          $("#editDictTypeWindow").dialog('close');
+                          //提示信息
+                          showMsg(result);
+                          //刷新页面
+                          $("#dictTypeList").datagrid('reload');
+                          //清除选择的行
+                          $("#dictTypeList").datagrid('clearSelections');
+                          //判断当前修改的字典类型是否处于打开查看状态////////////////
+                          var code = $("#editDictTypecode").val().replace(/^\s+|\s+$/gm,'');
+                          if (typecode == beforeCode) {
+                              //重新加载字典列表
+                              loadDictInfo(code);
+                              typecode = code;
+                          }
+                      } ,
+                       error : function () {
+                          errorShow();
+                       }
+                   });
+               }
+               if (dictTypeWindow == "addInfo"){
+                   //当前操作的是添加字典窗口
+                   var finfo = $("#addDictInfoForm").form('validate');
+                   if (!finfo){
+                       return;
+                   }
+                   //得到表单数据
+                   var data = $("#addDictInfoForm").serialize();
+                   //发送请求把数据保存到数据库
+                   $.ajax({
+                      url : '/sys/dictinfo_add',
+                      type : 'post',
+                      dataType : 'text',
+                      data : data,
+                      success : function (result) {
+                          $("#addDictInfoWindow").dialog('close');
+                          showMsg(result);
+                          $("#dictInfoList").datagrid('reload');
+                      } ,
+                       error : function () {
+                           errorShow();
+                       }
+                   });
+               }
+                if (dictTypeWindow == "editInfo"){
+                    //当前操作是修改字典信息
+                    //判断表单中数据的数据是否合法
+                    var finfo = $("#editDictInfoForm").form('validate');
+                    if(!finfo){
+                        return;
+                    }
+                    //得到表单中的数据
+                    var data = $("#editDictInfoForm").serialize();
+                    $.ajax({
+                       url : '/sys/dictinfo_update',
+                       type : 'put',
+                       dataType : 'text',
+                       data : data,
+                       success : function (result) {
+                           //关闭修改窗口
+                           $("#editDictInfoWindow").dialog('close');
+                           //提示信息
+                           showMsg(result);
+                           $("#dictInfoList").datagrid('reload');
+                           $("#dictInfoList").datagrid('clearSelections');
+                       } ,
+                        error : function () {
+                            errorShow();
+                        }
+                    });
+                }
+            });
+            //给添加窗口的取消按钮绑定点击事件
+            $(".cancelDictType").click(function () {
+                if (dictTypeWindow == "add"){
+                    //关闭添加窗口
+                    $("#addDictTypeWindow").dialog('close');
+                }
+                if (dictTypeWindow == "edit"){
+                    //关闭修改窗口
+                    $("#editDictTypeWindow").dialog('close');
+                }
+                if (dictTypeWindow == "addInfo"){
+                    //关闭添加字典窗口
+                    $("#addDictInfoWindow").dialog('close');
+                }
+                if (dictTypeWindow == "editInfo"){
+                    //关闭修改窗口
+                    $("#editDictInfoWindow").dialog('close');
+
+                }
+            });
+
+        });
+        //////////////////////////////////////
+        var dictTypeWindow = "";
+        var matchTypeCode = true;
+        var typecodeName = "";
+        var typecode = "";
+        var typename = "";
+        var  beforeCode = "";
+        //定义错误提示信息
+        function errorShow(){
+            $.messager.alert("提醒信息","系统繁忙，请稍后重试......",'info');
+        }
+        // 定义成功提示信息
+        function showMsg(result){
+            $.messager.show({
+               title : '成功提示',
+               msg : result,
+               timeout : 4000
+            });
+        }
+        //添加字典类型
+        function addDictType(){
+            dictTypeWindow = "add";
+            //打开添加字典类型窗口
+            $("#addDictTypeWindow").dialog('open');
+            //清空表单中的数据
+            $("#addDictTypeForm").form('clear');
+
+        }
+        //判断字典类型代码是否存在
+        function matchTypeCode1(result){
+            var data = result.replace(/^\s+|\s+$/gm,'');
+            if (dictTypeWindow == 'edit'){
+                if (data == typecodeName){
+                    return ;
+                }
+            }
+            //根据typeCode查询字典类型
+            if (data==""){
+                return;
+            }
+            $.ajax({
+               url : '/sys/dicttype/'+result,
+               type : 'get',
+               dataType : 'text',
+               success : function (result) {
+                   //判断该代码的字典信息是否存在:0、表示不存在，1、表示存在
+                   if (result == '1'){
+                       //存在
+                       $(".matchMessager").html("<font style='color: red'>该字典代码已存在</font>");
+                       matchTypeCode = false;
+                   }else{
+                      //不存在
+                       $(".matchMessager").html("<font style='color: green'>该字典代码可用</font>");
+                       matchTypeCode = true;
+                   }
+
+               } ,
+                error : function () {
+                    errorShow();
+                }
+            });
+        }
+        //删除选择的字典类型
+        function deleteDictType(){
+            //得到选择要删除的数据
+            var rows = $("#dictTypeList").datagrid('getSelections');
+            if (rows.length ==0){
+                showMsg("请选择要删除的字典类型!");
+                return;
+            }
+           //提示确认删除
+            $.messager.confirm("确认提示","是否确认要删除选择的数据?",function (r) {
+                if (r){
+                    //得到要删除的id
+                    var ids = new Array();
+                    for (var i=0;i<rows.length;i++){
+                        ids.push(rows[i].id);
+                    }
+                    var id = ids.join(',');
+                    //发送请求删除数据
+                    $.ajax({
+                       url : '/sys/dicttype_delete',
+                       type : 'delete',
+                       dataType : 'text',
+                        data : 'id='+id,
+                        success : function (result) {
+                           //重新刷新数字典列表
+                            if (typecode!=""){
+                                $("#dictInfoList").datagrid('reload');
+                            }
+                            //提示成功信息
+                            showMsg(result);
+                            //刷新页面
+                            $("#dictTypeList").datagrid('reload');
+                            //取消选择的行
+                            $("#dictTypeList").datagrid('clearSelections');
+                        },
+                        error : function () {
+                            errorShow();
+                        }
+                    });
+                } else {
+                    return;
+                }
+            });
+
+
+        }
+
+        //修改字典类型、
+        function editDictType(){
+            //得到选择要删除的数据
+            var rows = $("#dictTypeList").datagrid('getSelections');
+            if (rows.length != 1){
+                showMsg("请选择一条数据进行修改!");
+                return;
+            }
+            dictTypeWindow = "edit";
+            beforeCode = rows[0].typecode;
+            //打开修改窗口
+            $("#editDictTypeWindow").dialog('open');
+            //回显数据
+            typecodeName = rows[0].typecode;
+            $("#editDictTypeForm").form('load',rows[0]);
+        }
+
+        // 查看该字典类型下的的字典信息
+        function searchDictType() {
+            //得到选择的字典类型
+            var rows = $("#dictTypeList").datagrid('getSelections');
+            if (rows.length != 1){
+                showMsg("请选择一条数据进行查看!");
+                return ;
+            }
+            typecode = rows[0].typecode;
+            typename = rows[0].typename;
+            loadDictInfo(rows[0].typecode);
+        }
+        //加载字典类表信息
+        function loadDictInfo(typecode){
+            $(".dictInfoEast").html("<font style='font-size: 17px;'>字典类型:【"+typename+"】</font>");
+            //显示按钮
+            $("#dictInfoButton").css('display','block');
+            //根据字典类型 的typecode加载给类型下的所有字典 block
+            $("#dictInfoList").datagrid({
+                idField : 'id',
+                url : '/sys/dictTypes?code='+typecode,
+                method : 'get',
+                rownumbers : true,
+                striped : true,
+                columns : dictInfoColumns
+            });
+            //清除选择的行
+            $("#dictInfoList").datagrid('clearSelections');
+        }
+
+        //添加字典信息
+        function addDictInfo() {
+            dictTypeWindow = "addInfo";
+            //打开添加字典窗口
+            $("#addDictInfoWindow").dialog('open');
+            //清空表单数据
+            $("#addDictInfoForm").form('clear');
+            //设置字典类型代码
+            $(".dictInfoTypename").val(typename);
+            $(".dictInfoTypecode").val(typecode);
+
+        }
+
+        //删除选择的字典
+        function   deleteDictInfo() {
+            //得到选择要删除的数据
+            var rows = $("#dictInfoList").datagrid('getSelections');
+            if (rows.length == 0){
+                showMsg("请选择要删除的字典数据!");
+                return ;
+            }
+            //提示是否确认删除数据
+            $.messager.confirm("删除提示","确认要删除选择的数据吗?",function (f) {
+                if (!f){
+                    return;
+                }
+                var ids = new Array();
+                for (var i=0;i<rows.length;i++){
+                    ids.push(rows[i].id);
+                }
+                var id = ids.join(',');
+                $.ajax({
+                   url : '/sys/dictinfo_delete',
+                   type : 'delete',
+                   dataType : 'text',
+                   data : 'id='+id,
+                   success : function (result) {
+                       //提示成功信息
+                       showMsg(result);
+                       //删除页面
+                       $("#dictInfoList").datagrid('reload');
+                       $("#dictInfoList").datagrid('clearSelections');
+                   } ,
+                    error : function () {
+                        errorShow();
+                    }
+                });
+            });
+        }
+
+        //修改字典信息
+        function editDictInfo(){
+            //得到要修改的行
+            var rows = $("#dictInfoList").datagrid('getSelections');
+            if (rows.length != 1){
+                showMsg("请选择一条数据进行修改!");
+                return ;
+            }
+            dictTypeWindow = "editInfo";
+            //打开修改窗口
+            $("#editDictInfoWindow").dialog('open');
+            //回显数据
+            $("#editDictInfoForm").form('load',rows[0]);
+            $(".dictInfoTypename").val(typename);
+
+        }
+    </script>
+
+</head>
+<body class="easyui-layout" style="width: 100%;">
+
+    <div region="center"title="字典类型" style="float:left ; width:100%; height:100%;background-color: #eee;solid: 2px ">
+        <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+            <a shiro:hasPermission ="dictType_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addDictType()" iconCls="icon-add">添加字典类型</a>
+            <a shiro:hasPermission ="dictType_delete" id="btn2" href="#" class="easyui-linkbutton" onclick="deleteDictType()" iconCls="icon-cancel">删除字典类型</a>
+            <a shiro:hasPermission ="dictType_update" id="btn3" href="#" class="easyui-linkbutton" onclick="editDictType()" iconCls="icon-edit">修改字典类型</a>
+        </div>
+        <!--加载字典类型列表-->
+        <table id="dictTypeList" ></table>
+
+        <!--添加字典类型信息 -->
+        <div id="addDictTypeWindow" modal=true title="添加字典类型信息" class="easyui-dialog" closed="true" style=" width: 650px; height: 428px;background-color: #eee" >
+            <form  id="addDictTypeForm" action="" method="post">
+                <div class="formbody">
+                    <div class="formtitle"><span>字典类型基本信息</span></div>
+                    <!--   onblur="matchTypeCode(this)"-->
+                    <ul class="forminfo">
+                        <li><label>字典类型代码</label><input name="typecode" type="text" class="easyui-validatebox dfinput" onkeyup="matchTypeCode1(this.value)" required="true" missingMessage="字典类型代码必填!"/><i class="matchMessager"></i></li>
+                        <li><label>字典类型名称</label><input name="typename" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="字典类型名称必填！" /></li>
+                        <li><label>字典类型描述</label><textarea name="remark" style="width: 348px;height: 100px"></textarea></li>
+
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveDictType" value="确认保存"/>
+                            <input type="button" class="btn cancelDictType" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!--修改字典类型信息 -->
+        <div id="editDictTypeWindow" modal=true title="修改字典类型信息" class="easyui-dialog" closed="true" style=" width: 650px; height: 428px;background-color: #eee" >
+            <form  id="editDictTypeForm" action="" method="post">
+                <input type="hidden"  name="id"/>
+                <div class="formbody">
+                    <div class="formtitle"><span>字典类型基本信息</span></div>
+                    <ul class="forminfo">
+                        <li><label>字典类型代码</label><input name="typecode" id="editDictTypecode" type="text" class="easyui-validatebox dfinput" onkeyup="matchTypeCode1(this.value)" required="true" missingMessage="字典类型代码必填!"/><i class="matchMessager"></i></li>
+                        <li><label>字典类型名称</label><input name="typename" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="字典类型名称必填！" /></li>
+                        <li><label>字典类型描述</label><textarea name="remark" style="width: 348px;height: 100px"></textarea></li>
+
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveDictType" value="确认保存"/>
+                            <input type="button" class="btn cancelDictType" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <div region="east"  title="字典信息" style="float:left ; width:650px; height:100%;background-color: #eee;solid :2px">
+        <div style="width: 100%;height: 28px;background-color: #e5ebee;padding-top: 10px"><span class="dictInfoEast" style="color: #00a4ac"></span></div>
+        <div id="dictInfoButton" style="width: 100%;height: 31px;background: #efefef;padding-top: 6px; display: none">
+            <a shiro:hasPermission ="dictInfo_add" id="btn11" href="#" class="easyui-linkbutton" onclick="addDictInfo()" iconCls="icon-add">添加字典信息</a>
+            <a shiro:hasPermission ="dictInfo_delete" id="btn22" href="#" class="easyui-linkbutton" onclick="deleteDictInfo()" iconCls="icon-cancel">删除字典信息</a>
+            <a shiro:hasPermission ="dictInfo_update" id="btn33" href="#" class="easyui-linkbutton" onclick="editDictInfo()" iconCls="icon-edit">修改字典信息</a>
+        </div>
+        <!--加载字典明细信息-->
+        <table  id="dictInfoList"></table>
+
+        <!--添加字典信息 -->
+        <div id="addDictInfoWindow" modal=true title="添加字典信息" class="easyui-dialog" closed="true" style=" width: 650px; height: 428px;background-color: #eee" >
+            <form  id="addDictInfoForm"  action="" method="post">
+                <input type="hidden" class="dictInfoTypecode"  name="typecode"/>
+                <div class="formbody">
+                    <div class="formtitle"><span>字典基本信息</span></div>
+                    <!--   onblur="matchTypeCode(this)"-->
+                    <ul class="forminfo">
+                        <li><label>字典类型代码</label><input style="color: red" type="text" class="dictInfoTypename dfinput " disabled="false" /></li>
+                        <li><label>字典类型名称</label><input name="info" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="字典名称必填！" /></li>
+                        <li><label>字典类型描述</label><textarea name="remark" style="width: 348px;height: 100px"></textarea></li>
+
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveDictType" value="确认保存"/>
+                            <input type="button" class="btn cancelDictType" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!--修改字典信息 -->
+        <div id="editDictInfoWindow" modal=true title="修改字典信息" class="easyui-dialog" closed="true" style=" width: 650px; height: 428px;background-color: #eee" >
+            <form  id="editDictInfoForm"  action="" method="post">
+                <input type="hidden"   name="id"/>
+                <input type="hidden" class="dictInfoTypecode"  name="typecode"/>
+                <div class="formbody">
+                    <div class="formtitle"><span>字典基本信息</span></div>
+                    <!--   onblur="matchTypeCode(this)"-->
+                    <ul class="forminfo">
+                        <li><label>字典类型代码</label><input style="color: red" type="text" class="dictInfoTypename dfinput " disabled="false" /></li>
+                        <li><label>字典类型名称</label><input name="info" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="字典名称必填！" /></li>
+                        <li><label>字典类型描述</label><textarea name="remark" style="width: 348px;height: 100px"></textarea></li>
+
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveDictType" value="确认保存"/>
+                            <input type="button" class="btn cancelDictType" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+</body>
+</html>

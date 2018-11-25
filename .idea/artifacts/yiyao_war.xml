@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="yiyao:war">
+    <output-path>$PROJECT_DIR$/yiyao/target</output-path>
+    <root id="archive" name="yiyao-0.0.1-SNAPSHOT.war">
+      <element id="artifact" artifact-name="yiyao:war exploded" />
+    </root>
+  </artifact>
+</component>

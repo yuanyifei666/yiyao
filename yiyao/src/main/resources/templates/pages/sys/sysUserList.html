@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"  xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>系统用户管理页面</title>
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+
+        //定系统用户的列属性
+        var columns = [[
+            {
+                checkbox : true,
+                field : 'userid'
+            },{
+                title : '用户名称',
+                field : 'username',
+                width : 120
+            },{
+                title : '用户类型', //用户类别 0:系统管理员,1：卫生局2：医院 3:供货商
+                field : 'info',
+                width : 120,
+                formatter : function(value,row,index){
+                    if (value == '系统管理员'){
+                        //系统管理员
+                        return '<span style="color: red">'+value+'</span>';
+                    }
+                    if (value == '卫生局'){
+                        //系统管理员
+                        return '<span style="color: blueviolet">'+value+'</span>';
+                    }
+                    if (value == '医院'){
+                        //系统管理员
+                        return '<span style="color: green">'+value+'</span>';
+                    }
+                    if (value == '供货商'){
+                        //系统管理员
+                        return '<span style="color: #e7852b">'+value+'</span>';
+                    }
+                }
+
+            },{
+                title : '联系方式',
+                field : 'contact',
+                width : 120
+            },{
+                title : '联系地址',
+                field : 'addr',
+                width : 200
+            },{
+                title : '单位名称',
+                field : 'mc',
+                width : 200
+            },{
+                title : '电子邮件',
+                field : 'email',
+                width : 200
+            },{
+                title : '用户的状态',
+                field : 'userstate',
+                width : 100 , //用户状态：1正常，0暂停
+                formatter : function (value,row,index) {
+                    if (value == "1"){
+                        return "<span style='color: green'>正常</span>"
+                    } else{
+                        return "<span style='color: red'>暂停</span>"
+                    }
+                }
+            },{
+                title : '创建时间',
+                field : 'createtime',
+                width : 200
+            },{
+                title : '关联的角色',
+                field : 'roles',
+                width : '100%',
+                formatter : function (value,row,index) {
+                    console.info("roles:"+value.length);
+                    var rolename = "";
+                    if (value.length !=0){
+                        for (var i=0;i<value.length;i++){
+                            if (value[i]!=null){
+                                rolename += "【<font style='color: green'>"+ value[i].rolename+"</font>】";
+                            }
+                        }
+                    }
+                    return rolename;
+                }
+            }
+        ]];
+        //添加工具栏
+        var toolbar = ['-',{
+           text : '添加用户',
+            iconCls : 'icon-add',
+            handler : addSysUser
+        },'-',{
+            text : '删除用户',
+            iconCls : 'icon-cancel',
+            handler : deleteSysUser
+        },'-',{
+            text : '恢复用户',
+            iconCls : 'icon-back',
+            handler : backSyuser
+        },'-',{
+            text : '查询用户',
+            iconCls : 'icon-search',
+            handler : searchSysUser
+        },'-',{
+            text : '关联角色',
+            iconCls : 'icon-sum',
+            handler : relationRole
+
+        },'-'];
+        //判断该面板是否已经打开
+        var f = false;
+
+        //定义统一的错误提示信息
+        var globalError = "系统繁忙，请稍后重试......";
+
+        //预加载
+        $(function () {
+            //使用datagrid加载用户列表
+            $("#sysUserList").datagrid({
+                idField : 'username',
+                url : '/sys/sysUsers',
+                columns : columns,
+                rownumbers : true,
+                method : 'get',
+                striped : true,
+                pagination : true,
+                pageSize : 20,
+                pageList : [20,30,40,50]
+            });
+
+            //加载省的列表信息
+            $(".provinces").combobox({
+               url : '/sys/provinces',
+                valueField : 'proId',
+                textField : 'proName',
+                onSelect : function () {
+                    //得到当前选择的省的id
+                    var proid = $(".provinces").combobox('getValue');
+                    // alert("proid:"+proid);
+                    $(".areas").combobox('reload','/sys/areas/0');
+                    //清空市和区域下拉框中的内容
+                    $(".citys").combobox('clear');
+                    $(".areas").combobox('clear');
+                    //重新根据省的id查询该省下的所有城市列表
+                    $(".citys").combobox({
+                       url : '/sys/citys/'+proid,
+                       valueField : 'cityId',
+                       textField : 'cityName' ,
+                        onSelect : function () {
+                            //清除区域下拉框中的列表信息
+                            $(".areas").combobox('clear');
+                            //重新加载该城市下的所有区域信息
+                            var cityid = $(".citys").combobox('getValue');
+                            $(".areas").combobox('reload','/sys/areas/'+cityid);
+                        }
+                    });
+                }
+                
+            });
+
+            //加载用户类型列表信息
+            $("#sysState").combobox({
+               url : '/sys/dictTypes?code=s01',
+               onSelect : function () {
+                    var groupid = $("#sysState").combobox('getValue');
+                    //判断选择的是哪类用户 0:系统管理员,1：卫生局2：医院 3:供货商
+
+                   //加载单位名称列表信息
+                   $(".sysid").combobox('reload','/sys/sysid/'+groupid);
+
+               }
+            });
+
+            //给取消按钮绑定点击事件
+            $(".cancelSysUser").click(function () {
+               //关闭窗口
+                $("#addSysUserWindow").dialog('close');
+            });
+            //给确认按钮绑定点击事件
+            $(".saveSysUser").click(function () {
+                //验证表单输入的数据是否合法
+                var f = $("#addSysUserForm").form('validate');
+                if (!f){
+                    return ;//有非法数据，不能提交表单
+                }
+                //得到表单中的数据
+                var data = $("#addSysUserForm").serialize();
+                // alert("data:"+data);
+                //得到省、市、区的信息
+                var pro_area = $(".provinces").combobox('getText')+"省"+$(".citys").combobox('getText')+"市"+$(".areas").combobox("getText");
+                // alert("pro-area:"+pro_area);
+                //发送ajax请求把数据保存到后台数据库
+                $.ajax({
+                   url : '/sys/sysuser_add',
+                   type : 'post',
+                   dataType : 'text',
+                   data : data+"&pro_area="+pro_area,
+                   success : function (result) {
+                       //关闭添加窗口
+                       $("#addSysUserWindow").dialog('close');
+                       //提示添加成功信息
+                       $.messager.show({
+                          title : '成功提示',
+                          msg : result,
+                          timeout : 4000
+                       });
+                       //重新加载用户列表
+                       $("#sysUserList").datagrid("reload");
+                   } ,
+                    error : function () {
+                        $.messager.alert("信息提示",globalError,"info");
+                    }
+                });
+            });
+
+            //给关闭查询条件面板取消按钮绑定点击事件
+            $("#cancelSearch").click(function () {
+               //关闭查询条件面板
+                $("#searchSysUserWindow").layout('collapse','north');
+                //清除表单中的数据
+                $("#searchSysUserForm").form('clear');
+                f = false;
+            });
+
+            //给清空查询表单数据的按钮绑定点击事件
+            $("#clearSearch").click(function () {
+                //清空表单中的条件
+                $("#searchSysUserForm").form('clear');
+            });
+
+            //给查询按钮绑定点击事件
+            $("#searchSysUser").click(function () {
+               //得到表单中的查询条件
+               //  var searchData = $("#searchSysUserForm").serialize();
+                $.fn.serializeObject = function()
+                {
+                    var o = {};
+                    var a = this.serializeArray();
+                    $.each(a, function() {
+                        if (o[this.name]) {
+                            if (!o[this.name].push) {
+                                o[this.name] = [o[this.name]];
+                            }
+                            o[this.name].push(this.value || '');
+                        } else {
+                            o[this.name] = this.value || '';
+                        }
+                    });
+                    return o;
+                };
+                //得到表单中的查询条件
+                var sysUser = $("#searchSysUserForm").serializeObject();
+                //发送请求查询数据
+                // 重新加载datagrid并且带有查询条件
+                $("#sysUserList").datagrid('reload',{
+                    username : sysUser.username,
+                    groupid : sysUser.groupid,
+                    userstate : sysUser.userstate,
+                    startTime : sysUser.startTime,
+                    endTime : sysUser.endTime
+
+                });
+
+            });
+
+            //给关联角色窗口的取消按钮绑定点击事件
+            $(".cancelRaltionRole").click(function () {
+               //关闭关联角色的窗口
+               $("#relationRoleWindow").dialog('close');
+            });
+            //给关联角色窗口的保存按钮绑定点击事件
+            $(".saveRaltionRole").click(function () {
+                //判断是否有选择的角色信息
+               var roles =  $(".relationSysUserRole").combobox('getValues');
+
+                //得到表单中的数据
+                var data = $("#relationRoleForm").serialize();
+                // alert("data:"+data);
+                //发送请求
+                $.ajax({
+                   url : '/sys/relationUserToRole',
+                    type : 'post',
+                    dataType : 'text',
+                    data : data,
+                    success : function (result) {
+                       //关闭窗口
+                        $("#relationRoleWindow").dialog('close');
+                        //提示成功信息
+                        $.messager.show({
+                           title : '成功提示',
+                           msg : result,
+                           timeout : 4000
+                        });
+                        //刷新用户列表
+                        $("#sysUserList").datagrid('reload');
+                        $("#sysUserList").datagrid('clearSelections');
+                    },
+                    error : function () {
+                        $.messager.alert("信息提示","系统繁忙，请稍后重试.......");
+                    }
+
+                });
+
+            });
+
+        });
+
+        //================业务方法====================
+        var matchUsername = false;
+        //判断用户名是否重复
+        function clickUserName(name){
+            // alert("username:"+name);
+            //发送请求判断该用户名是否存在
+            $.ajax({
+               url : '/sys/sysuser/'+name,
+                type : 'get',
+                dataType : "text",
+                success : function (result) {
+                    //返回1表示用户名已经存在，0表示用户名可用
+                    if (result == '1'){
+                        $(".matcherUsername").html("<font style='color:red;'>用户名已经存在！</font>");
+                        matchUsername = false;
+                    } else {
+                        $(".matcherUsername").html("<font style='color:green;'>用户名可用！</font>");
+                        matchUsername = true;
+                    }
+                }
+            });
+        }
+
+        //添加用户信息
+        function addSysUser(){
+            //打开添加用户的窗口
+            $("#addSysUserWindow").dialog('open');
+            //清空表单数据
+            $("#addSysUserForm")[0].reset();
+        }
+        //删除选择的用户信息
+        function deleteSysUser(){
+            //得到选择的行
+            var rows = $("#sysUserList").datagrid('getSelections');
+            if (rows.length ==0){
+                //提示要删除的用户信息
+                $.messager.show({
+                   title : '提示信息',
+                   msg : '请选择要删除的用户信息',
+                   timeout : 4000
+                });
+                return ;
+            }
+
+            //提示是否确认删除
+            $.messager.confirm('删除提示',"确认删除选择的用户信息吗?",function (f) {
+                if (!f){
+                    return;
+                }
+                //得到选择的行的id
+                var ids = new Array();
+                for (var i=0;i<rows.length;i++){
+                    ids.push(rows[i].username);
+                }
+                var usernames = ids.join(",");
+                // alert("usernames:"+usernames);
+                //发送ajax请求批量删除系统用户信息
+                $.ajax({
+                    url : '/sys/sysusers_delete',
+                    type : 'delete',
+                    dataType : 'text',
+                    data : 'usernames='+usernames,
+                    success : function (result) {
+                        //提示删除成功信息
+                        $.messager.show({
+                            title : '成功提示',
+                            msg : result,
+                            timeout : 4000
+                        });
+                        //清除选择的行
+                        $("#sysUserList").datagrid("clearSelections");
+                        //重新加载用户列表信息
+                        $("#sysUserList").datagrid('reload');
+
+                    },
+                    error : function () {
+                        $.messager.alert("信息提示",globalError,'info');
+                    }
+                });
+            });
+        }
+
+        //恢复删除的用户信息
+        function backSyuser(){
+            var rows = $("#sysUserList").datagrid('getSelections');
+            if (rows.length ==0){
+                //提示要删除的用户信息
+                $.messager.show({
+                    title : '提示信息',
+                    msg : '请选择要恢复的用户信息',
+                    timeout : 4000
+                });
+                return ;
+            }
+
+            //提示是否确认删除
+            $.messager.confirm('恢复提示',"确认恢复选择的用户信息吗?",function (f) {
+                if (!f){
+                    return;
+                }
+                //得到选择的行的id
+                var ids = new Array();
+                for (var i=0;i<rows.length;i++){
+                    ids.push(rows[i].username);
+                }
+                var usernames = ids.join(",");
+                // alert("usernames:"+usernames);
+                //发送ajax请求批量删除系统用户信息
+                $.ajax({
+                    url : '/sys/sysusers_update',
+                    type : 'put',
+                    dataType : 'text',
+                    data : 'usernames='+usernames,
+                    success : function (result) {
+                        //提示删除成功信息
+                        $.messager.show({
+                            title : '成功提示',
+                            msg : result,
+                            timeout : 4000
+                        });
+                        //清除选择的行
+                        $("#sysUserList").datagrid("clearSelections");
+                        //重新加载用户列表信息
+                        $("#sysUserList").datagrid('reload');
+
+                    },
+                    error : function () {
+                        $.messager.alert("信息提示",globalError,'info');
+                    }
+                });
+            });
+        }
+
+        //查询用户信息
+        function searchSysUser(){
+            //判断面板是否已经打卡
+            if (f){
+                return ;
+            }else {
+                //打开查询条件面板
+                $("#searchSysUserWindow").layout('expand','north');
+                f = true;
+            }
+        }
+        //关联角色
+         function relationRole(){
+            //得到要关联角色的用户
+             var rows = $("#sysUserList").datagrid('getSelections');
+             if (rows.length != 1){
+                $.messager.show({
+                    title : '信息提示',
+                    msg : "请选择一个要关联角色的用户！",
+                    timeout : 4000
+                });
+                 return ;
+             }
+             //得到要关联角色的用户id和名称
+
+             //清除表单
+             $("#relationRoleForm").form('clear');
+             $("#relationSysUser").val(rows[0].username+",");
+             //打开关联角色的页面
+             $("#relationRoleWindow").dialog('open');
+             //给窗口中设置要关联的用户名称
+             $("#relationUser").html("【<font style='color: red;'>"+rows[0].username+"</font>】");
+             var roleids = new Array();
+             var roles = rows[0].roles;
+             for (var i = 0;i<roles.length;i++){
+                 roleids.push(roles[i].id);
+             }
+             //回显关联的角色信息
+             $("#relationRoleForm").form('load',{
+                 roles : roleids
+             })
+
+         }
+
+        //自定义输入电话的验证
+        $.extend($.fn.validatebox.defaults.rules, {
+            minLength: {
+                validator: function(value, param){
+                    if (value.length == 11){
+                        return true;
+                    } else {
+                        return false;
+                    }
+                },
+                message: '请输入合法的电话号码!'
+            }
+        });
+
+    </script>
+
+</head>
+<body id="searchSysUserWindow" class="easyui-layout">
+
+    <div region="north" title="用户查询条件" iconCls="icon-search" style="height: 130px;" collapsed="true">
+        <form id="searchSysUserForm" action="" method="post">
+            <table>
+                <tr>
+                    <td style="padding-left: 10px;">
+                        用户名称： <input type="text" name="username" style="height: 28px;"/>
+                    </td>
+
+                    <td style="padding-left: 7px;">
+                        <!--用户类别 0:系统管理员,1：卫生局2：医院 3:供货商-->
+                        用户类型：   <input name="groupid" editable="false" type="text" url="/sys/dictTypes?code=s01" valueField="id" style="height: 28px;" textField="info" class="easyui-combobox" />
+                    </td>
+
+                    <td >
+                        <!--用户状态：1正常，0暂停-->
+                        用户的状态：
+                        <select style="height: 28px;" name="userstate">
+                            <option value="">--请选择--</option>
+                            <option value="1">正常</option>
+                            <option value="0">暂停</option>
+                        </select>
+                    </td>
+
+                </tr>
+                <tr/>
+                    <td style="padding-left: 7px;" >
+                        用户创建时间：<input name="startTime" type="text" class="easyui-datetimebox"  editable="false"/>至
+                    </td>
+
+                    <td style="padding-left: 10px;">
+                        <input name="endTime" type="text" class="easyui-datetimebox"  editable="false"/>
+                    </td>
+
+                    <td style="padding-left: 10px;">
+                        <a href="#" id="clearSearch" class="easyui-linkbutton" iconCls="icon-no">清空查询条件</a>
+                        <!--添加查询条件-->
+                        <a href="#" id="searchSysUser" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                        <a href="#" id="cancelSearch" class="easyui-linkbutton" iconCls="icon-no">关闭</a>
+                    </td>
+                </tr>
+            </table>
+        </form>
+
+    </div>
+
+    <div region="center" style="padding:5px;background:#eee;">
+
+        <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+            <a shiro:hasPermission ="sysUser_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addSysUser()" iconCls="icon-add">添加用户信息</a>
+            <a shiro:hasPermission ="sysUser_delete" id="btn2" href="#" class="easyui-linkbutton" onclick="deleteSysUser()" iconCls="icon-cancel">删除用户信息</a>
+            <a shiro:hasPermission ="sysUser_back" id="btn3" href="#" class="easyui-linkbutton" onclick="backSyuser()" iconCls="icon-back">恢复用户信息</a>
+            <a shiro:hasPermission ="sysUser_search" id="btn4" href="#" class="easyui-linkbutton" onclick="searchSysUser()" iconCls="icon-search">查询用户信息</a>
+            <a shiro:hasPermission ="sysUser_relation" id="btn5" href="#" class="easyui-linkbutton" onclick="relationRole()" iconCls="icon-sum">关联角色</a>
+        </div>
+        <!--显示用户列表-->
+        <table id="sysUserList"></table>
+        <!--添加用户信息 -->
+        <div id="addSysUserWindow" modal=true title="添加用户信息" class="easyui-dialog" closed="true" style="width: 650px; height: 700px;" >
+            <form  id="addSysUserForm" action="" method="post">
+                <div class="formbody">
+                    <div class="formtitle"><span>用户基本信息</span></div>
+                    <ul class="forminfo">
+                        <li><label>用户账号</label><input name="username" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="用户账号必填!" onblur="clickUserName(this.value)"/><i class="matcherUsername"></i></li>
+                        <li><label>用户类型</label><input id="sysState" name="groupid" editable="false" type="text" valueField = "id" textField="info" class=" easyui-combobox dfinput"/></li>
+                        <li><label>用户密码</label><input name="pwd" type="text" class="easyui-validatebox dfinput" style="color: red" value="用户密码统一为初始化密码123456" disabled="true"/></li>
+                        <li>
+                            性别:
+                            <input type="radio" name="sex" value="1" checked="checked"/>男
+                            <input type="radio" name="sex" value="0"/>女
+                        </li>
+                        <li><label>联系方式</label><input name="contact" type="text" class="easyui-numberbox easyui-validatebox  dfinput" validType="minLength"/></li>
+                        <li><label>联系地址</label></li>
+                        <li>省:<input   name="proId" editable="false"  type="text" class="easyui-validatebox easyui-combobox provinces"/>
+                            市:<input name="cityId" editable="false" type="text" class="easyui-validatebox easyui-combobox  citys" valueField="cityId" textField="cityName"/>
+                            区/县:<input name="areaId" editable="false"  type="text" class="easyui-validatebox easyui-combobox areas"  valueField="areaId" textField="areaName"/>
+                        </li>
+                        <li>
+                            具体街道:<input name="addr"   type="text" class="easyui-validatebox dfinput"  style="height: 34px;" />
+                        </li>
+                        <li>
+                            邮箱地址:<input name="email" type="text" class="dfinput"/>
+                        </li>
+                        <li>
+                            用户的状态
+                            <input type="radio" name="userstate" value="1" checked="checked"/>正常
+                            <input type="radio" name="userstate" value="0"/>暂停
+                        </li>
+                        <li>
+                            单位名称
+                            <input type="text" name="sysid" class="easyui-combobox dfinput sysid" editable="false" valueField="id" textField="mc"/>
+                             <i>请先选中相应的用户类型</i>
+                        </li>
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveSysUser" value="确认保存"/>
+                            <input type="button" class="btn cancelSysUser" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!--关联角色窗口-->
+        <div id="relationRoleWindow" modal=true title="关联角色" class="easyui-dialog" closed="true" style="width: 500px; height: 300px;" >
+            <form  id="relationRoleForm" action="" method="post">
+                <input type="hidden" name="usernames" value="" id="relationSysUser" />
+                <div class="formbody">
+                    <div class="formtitle"><span>系统角色信息</span></div>
+                    <ul class="forminfo">
+                        <li><label>关联角色的用户</label><span  id="relationUser"></span></li>
+                        <li><label>系统的角色</label><input name="roles" type="text" style="width: 260px" class="easyui-combobox relationSysUserRole" url="/sys/sysRoles" editable="false" method="get" valueField="id" textField="rolename" multiple="true"/></li>
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveRaltionRole" value="确认保存"/>
+                            <input type="button" class="btn cancelRaltionRole" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</body>
+</html>

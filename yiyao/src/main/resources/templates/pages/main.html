@@ -1,0 +1,264 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>医药采购系统管理系统</title>
+
+    <link rel="shortcut icon" th:href="@{/favicon.ico}"/>
+    <link rel="bookmark" th:href="@{/favicon.ico}"/>
+
+    <!-- Required Stylesheets -->
+    <link rel="stylesheet" type="text/css" href="css/reset.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="css/mws.style.css" media="screen" />
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+
+  <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+  <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+  <!--引入easy-ui开发所需的js和css-->
+
+  <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+  <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+  <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+  <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+  <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+  <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+  <style>
+    .footer {
+      width: 100%;
+      text-align: center;
+      line-height: 35px;
+    }
+    .top-bg {
+      background-color: #d8e4fe;
+      height: 80px;
+    }
+      .topFont{
+          position: absolute;
+          /*left: -115px;*/
+          /*top: 6px;*/
+          left: 78px;
+          top: 41px;
+      }
+
+  </style>
+
+    <script type="text/javascript">
+        //预加载
+        $(function () {
+            //加载权限树
+            $("#myTree").tree({
+                url : '/operations?code=1',
+                method : 'post',
+                animate : true,
+                onDblClick : function (node) {
+                    //判断该节点是否是根节点，根节点不打开tab
+                    if (node.state != null){
+                        //展开或者关闭跟节点
+                        $("#myTree").tree('toggle',node.target);
+                        return ;
+                    }
+                    console.info(node);
+                    var tabs = $("#conterTabs");
+                    var title  = node.text;
+                    //判断面板中该tab是已经存在，如果存在则选中，否则才新打开一个tab
+                    if (tabs.tabs('exists',title)){
+                        //该tab已经存在则选中该tab即可
+                        tabs.tabs('select',title);
+                    }else {
+                        //打开一个新的tab
+                        tabs.tabs('add',{
+                            title : node.text,
+                            closable : true,
+                            selected : true ,
+                            iconCls : 'icon-tag',
+                            content : "<iframe  width='100%' height='100%' src='"+node.attributes.url+"'></iframe>"
+                        });
+                    }
+                }
+            });
+
+            //单每个面板tab被选中时触发该方法
+            $("#conterTabs").tabs({
+                onSelect : function (title,index) {
+                    // alert("title :"+title+"index:"+index);
+                    // $("#conterTabs").append("<iframe src='/sys/userYYPage'></iframe>");
+                }
+            })
+
+
+            //给退出登录a标签绑定点击事件
+            $("#userLogout").click(function () {
+                //提示用户是否要退出登录
+                $.messager.confirm("提示信息","是否确定要退出登录?",function (f) {
+                    if (f){
+                        //退出登录
+                        $.ajax({
+                            url : '/userLogout',
+                            type : 'get',
+                            async : true,
+                            dataType : 'html',
+                            success : function (result) {
+                                //跳转到登录页面
+                                window.location.href = "http://localhost/";
+                            },
+                            error : function () {
+                                $.messager.alert("提示信息","系统繁忙，请稍后重试....","info");
+                            }
+                        })
+                    }else {
+                        return ;
+                    }
+                });
+            });
+
+            //给修改密码按钮绑定点击事件
+            $("#editPassword").click(function () {
+                //点击修改密码按钮弹出修改密码窗口
+                $("#editPasswordWindow").dialog('open');
+                $("#editPassForm").form('clear');
+
+            })
+
+
+            //=================================
+            //点击确认修改密码
+            $("#submitEditPassButton").click(function () {
+               //验证表单的数据是否合法
+                var validate = $("#editPassForm").form('validate');
+                if (!validate){
+                    //表单验证不通过
+                    return ;
+                }
+                //得到新密码
+                var pass = $("#pwd").val();
+                //发送请求到服务器更新数据库
+                $.ajax({
+                    url : '/updatePass',
+                    type : 'post',
+                    dataType : 'text',
+                    data : {pwd:pass},
+                    success : function (result) {
+                        //关闭窗口
+                        $("#editPasswordWindow").dialog('close');
+                        //提示修改成功信息
+                        $.messager.show({
+                            title : '成功提示',
+                            msg : result,
+                            timeout : 4000
+                        });
+                    },
+                    error : function () {
+                        $.messager.alert("提示信息","系统繁忙，请稍后重试......","error");
+                    }
+                })
+
+
+            });
+
+            //取消修改密码
+            $("#noEditPassButton").click(function () {
+                //关闭修改密码窗口
+                $("#editPasswordWindow").dialog('close');
+            });
+        });
+
+
+        //验证输入的密码是否相等
+        $.extend($.fn.validatebox.defaults.rules, {
+            equals: {
+                validator: function(value,param){
+                    return value == $(param[0]).val();
+                },
+                message: '输入的密码不相等!.'
+            },
+            minLength: {
+                validator: function (value, param) {
+                    if (value.length >= 6 && value.length<=18){
+                        return true;
+                    }
+                    return false;
+                },
+                message : "输入的密码长度必须在6~18之间!"
+            }
+        });
+    </script>
+
+
+</head>
+<body class="easyui-layout" minWidth="1000">
+    <div  region="north" border="true" split="true" style="overflow: hidden; height: 100px;">
+      <!--头部-->
+      <div class="top-bg topleft" style="background:url(images/topbg.gif) repeat-x;height:100px;">
+              <a href="main.html" target="_parent"><img src="images/logo.png" title="系统首页" /></a>
+              <span class="topFont" style="font-size: 34px;color: #cc933b;">医药采购系统</span>
+
+          <!-- User Area Wrapper -->
+          <div id="mws-user-tools" class="clearfix">
+              <!-- 用户账号信息-->
+              <div id="mws-user-info" class="mws-inset">
+                  <div id="mws-user-photo">
+                      <img src="images/profile.jpg" alt="User Photo" />
+                  </div>
+                  <div id="mws-user-functions">
+                      <div style="color: #cc933b" id="mws-username">
+                          你好!【[[${session.user.username}]]】
+                      </div>
+                      <ul>
+                          <li><a href="#" id="editPassword">修改密码</a></li>
+                          <li><a href="#" id="userLogout" >退出登录</a></li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+
+      </div>
+    </div>
+    <div region="south" border="true" split="true" style="overflow: hidden; height: 40px;">
+      <!--底部-->
+      <div class="footer">版权所有：<a href="#">阿飞工作室</a></div>
+    </div>
+    <div region="west" split="true" title="导航菜单" style="width: 200px;">
+      <!--左侧-->
+        <ul id="myTree"></ul>
+    </div>
+    <div id="mainPanle" region="center" title="主页面" style="padding:5px;overflow: hidden;">
+
+      <!--主页面-->
+        <div id="conterTabs" class="easyui-tabs"  fit="true">
+            <div title="欢迎页面" iconCls="icon-home" style="padding:20px;">
+               <div style="background:url(images/hello02.jpg) no-repeat;height: 100%;width: 100%; background-size: cover;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!--修改密码窗口-->
+    <div id="editPasswordWindow" title="修改密码" class="easyui-dialog" style="width: 300px;height: 150px;margin-top:15px; "modal="true" closed="true" align="center">
+        <form id="editPassForm" >
+            <table>
+                <tr>
+                    <td>新&nbsp;&nbsp;密码：</td>
+                    <td><input type="password" id="pwd"name="pwd" class="easyui-validatebox" required="true" validType="minLength" missingMessage="请输入新密码!"/></td>
+                </tr>
+                <tr  >
+                    <td>确认密码：</td>
+                    <td><input type="password" class="easyui-validatebox" required="true" validType="equals['#pwd']" missingMessage="请再次确认密码！" /></td>
+                </tr>
+                <tr  >
+                    <td colspan="2" align="center">
+                        <span id="submitEditPassButton"  style="padding-left: 59px;padding-top: 20px;" class="easyui-linkbutton" iconCls="icon-save" >保存</span>
+                        <span id="noEditPassButton" class="easyui-linkbutton" iconCls="icon-no">取消</span>
+                    </td>
+                </tr>
+            </table>
+
+        </form>
+
+    </div>
+
+</body>
+</html>

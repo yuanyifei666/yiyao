@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>药品信息维护</title>
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+
+        //定义药品信息列表单元格
+        var columns = [[{
+            checkbox : true
+        },{
+            field : 'bm',
+            title : '药品流水号',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'spmc',
+            title : '药品名',
+            width :120,
+            align : 'center'
+        },{
+            field : 'scqymc',
+            title : '生产企业名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'zbjg',
+            title : '中标价',
+            width : 90,
+            align : 'center'
+        },{
+            field : 'pzwh',
+            title : '批准文号',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'jyztmc',
+            title : '交易状态',
+            width : 100,
+            align : 'center',
+            formatter : function (value ,row,index) {
+                if (value == '正常'){
+                    return '<font style="color :green">'+value+'</font>';
+                } else{
+                    return '<font style="color :red">'+value+'</font>';
+                }
+            }
+        },{
+            field : 'dw',
+            title : '单位',
+            width : 70,
+            align : 'center'
+        },{
+            field : 'mc',
+            title : '通用名',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'jx',
+            title : '剂型',
+            width : 100,
+            align : 'center'
+        },{
+            field : 'gg',
+            title : '规格',
+            width : 110,
+            align : 'center'
+        },{
+            field : 'blmc',
+            title : '药品类别',
+            width : 150,
+            align : 'center'
+        }]];
+        //预加载
+        $(function () {
+            $("#ypxxList").datagrid({
+               idField : 'id',
+               url : '/ypxx/ypxxs',
+                method : 'get',
+                rownumbers : true,
+                striped : true,
+                pagination : true,
+                pageList : [20,30,40],
+                columns : columns
+            });
+
+            //给保存按钮绑定点击事件
+            $(".saveYpxx").click(function () {
+                if (ypxxWindowState == 'add'){
+                    //进行添加操作
+                    //判断表单中输入的数据是否合法
+                    var f = $("#addYpxxForm").form('validate');
+                    if (!f){
+                        return;
+                    }
+                    //得到表单中的数据
+                    var data = $("#addYpxxForm").serialize();
+                    //发送请求把数据添加到数据库
+                    $.ajax({
+                       url : '/ypxx/ypxx_add',
+                       type : 'post',
+                       dataType : 'text',
+                       data : data,
+                       success : function (result) {
+                           //关闭添加窗口
+                           $("#addYpxxWindow").dialog('close');
+                           //提示成功信息
+                           showMsg(result);
+                           //刷新药品列表
+                           $("#ypxxList").datagrid('reload');
+                       },
+                        error : function () {
+                            showError();
+                        }
+                    });
+                }
+                if (ypxxWindowState == 'edit'){
+                    //进行修改操作
+                    var f = $("#editYpxxForm").form('validate');
+                    if (!f){
+                        return;
+                    }
+                    //得到表单中的数据
+                    var data = $("#editYpxxForm").serialize();
+                    //发送请求修改数据
+                    $.ajax({
+                       url : '/ypxx/ypxx_update',
+                       type : 'put',
+                       dataType : 'text' ,
+                        data : data,
+                        success : function (result) {
+                            //关闭修改窗口
+                            $("#editYpxxWindow").dialog('close');
+                            //提示信息
+                            showMsg(result);
+                            //刷药品信息列表
+                            $("#ypxxList").datagrid('reload');
+                        },
+                        error : function () {
+                            showError();
+                        }
+                    });
+                }
+            });
+            //取消按钮绑定点击事件
+            $(".cancelYpxx").click(function () {
+                if (ypxxWindowState == 'add'){
+                    //关闭添加窗口
+                    $("#addYpxxWindow").dialog('close');
+                }
+                if (ypxxWindowState == 'edit'){
+                    //关闭修改窗口
+                    $("#editYpxxWindow").dialog('close');
+                }
+            });
+
+            //给查询条件窗口取消按钮绑定点击事件
+            $("#cancelSearch").click(function () {
+                $("#ypxxWindow").layout('collapse','north');
+                searchWindowState = false;
+            });
+            //给查询条件窗口的清空按钮绑定点击事件
+            $("#clearSearch").click(function () {
+                $("#searchYpxxForm").form('clear');
+            });
+
+            //========把表单中的数据变成json数据格式
+            $.fn.serializeObject = function()
+            {
+                var o = {};
+                var a = this.serializeArray();
+                $.each(a, function() {
+                    if (o[this.name]) {
+                        if (!o[this.name].push) {
+                            o[this.name] = [o[this.name]];
+                        }
+                        o[this.name].push(this.value || '');
+                    } else {
+                        o[this.name] = this.value || '';
+                    }
+                });
+                return o;
+            };
+
+            //给查询条件窗口绑定点击事件
+            $("#searchYpxx").click(function () {
+               //得到表单中输入的查询条件
+                var searchData = $("#searchYpxxForm").serializeObject();
+                //条件查询药品信息
+                $("#ypxxList").datagrid('reload',{
+                    bm : searchData.bm,
+                    spmc : searchData.spmc,
+                    scqymc : searchData.scqymc,
+                    jyzt : searchData.jyzt,
+                    dw : searchData.dw,
+                    jx : searchData.jx,
+                    lb : searchData.lb,
+                    startZbjg : searchData.startZbjg,
+                    endZbjg : searchData.endZbjg
+                });
+            });
+            ////////////////////////////////////////
+        });
+        //统一错误提示
+        function showError(){
+            $.messager.alert("信息提示","系统繁忙，请稍后重试.........",'info');
+        }
+        //统一提示信息
+        function  showMsg(msg) {
+            $.messager.show({
+                title : '提示信息',
+                msg : msg,
+                timeout : 4000
+            });
+        }
+        //----------------------------------------------
+        //定义全局属性
+        var ypxxWindowState;
+        var searchWindowState = false;
+        //添加药品信息
+        function addYpxx(){
+            ypxxWindowState = 'add';
+            //打开添加药品信息窗口
+            $("#addYpxxWindow").dialog('open');
+            //清空表单中的数据
+            $("#addYpxxForm").form('clear');
+        }
+        //修改药品信息
+        function editYpxx(){
+            //得到选择要修改的数据
+            var rows =$("#ypxxList").datagrid('getSelections');
+            if (rows.length != 1){
+                showMsg("请选择要修改的药品!");
+                return ;
+            }
+            ypxxWindowState = 'edit';
+            //打开修改窗口
+            $("#editYpxxWindow").dialog('open');
+            // 回显数据
+            $("#editYpxxForm").form('load',rows[0]);
+        }
+        //批量删除药品信息
+        function deleteYpxx(){
+            // 得到选择要删除的数据
+            var rows = $("#ypxxList").datagrid('getSelections');
+            if (rows.length == 0){
+               showMsg("请选择要删除的药品!");
+               return ;
+            }
+            //提示确认删除数据
+            $.messager.confirm('删除提示','确认要删除选择的药品信息吗?',function (r) {
+                if (!r){
+                    return;
+                }
+                //得到要删除的药品id
+                var ids = new Array();
+                for (var i=0;i<rows.length;i++){
+                    ids.push(rows[i].id);
+                }
+                var id = ids.join(',');
+                //发送请求删除数据
+                $.ajax({
+                    url : '/ypxx/ypxx_delete',
+                    type : 'delete',
+                    dataType : 'text',
+                    data : 'id='+id,
+                    success : function (result) {
+                        //提示成功信息
+                        showMsg(result);
+                        $("#ypxxList").datagrid('reload');
+                        $("#ypxxList").datagrid('clearSelections');
+                    } ,
+                    error : function () {
+                        showError();
+                    }
+                });
+            });
+        }
+        //查询药品信息
+        function searchYpxx(){
+            if (searchWindowState){
+                return;
+            }
+            //打开查询窗口
+            $("#ypxxWindow").layout('expand','north');
+            //清空表单中的数据
+            $("#searchYpxxForm").form('clear');
+            searchWindowState = true;
+        }
+        //实现药品信息的导出
+        function doExportYpxx(){
+
+            //得到查询的所有药品信息
+            var rows = $("#ypxxList").datagrid('getRows');
+            if (rows.length == 0){
+                $.messager.alert("信息提示","没有药品信息可以导出，请查询要导出的药品信息!",'info');
+                return;
+            }
+            $.messager.confirm("导出提醒","只导出符合查询条件的所有药品信息!",function (f) {
+                if (!f){
+                    return ;
+                }
+                var data ;
+                if (searchWindowState){
+                    data = $("#searchYpxxForm").serialize();
+                }
+                //发送请求，导出数据
+                $.ajax({
+                    url : '/ypxx/exportYpxx',
+                    type : 'get',
+                    dataType : 'html',
+                    data : data,
+                    success : function (result) {
+                        //提示用户下载已经导出的药品信息
+                        $.messager.alert("成功导出数据",result,'info');
+                    },
+                    error : function () {
+                        showError();
+                    }
+                });
+            });
+        }
+
+        //实现药品信息的导入
+        function doImportYpxx(){
+            $.messager.alert("导出提示"
+                ,"导入药品信息先要下载模板，严格按照模板进行填写药品信息:<a href='/ypxxtemplate/ypxx_template.xls' style='color:green;'>点击下载模板</a>" +
+                "<input type='file' style='padding-left: 40px;' name='yiyao_template'value='选择要导入的文件'/>",'info');
+        }
+    </script>
+
+</head>
+<body id="ypxxWindow" class="easyui-layout">
+
+<div region="north" title="药品查询条件" split="true" iconCls="icon-search"  style="width:100px;height:145px;" collapsed="true">
+    <form id="searchYpxxForm" action="" method="post">
+        <table>
+            <tr>
+                <td style="padding-left: 10px;">药品流水号：</td>
+                <td >
+                    <input type="text" name="bm" style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 10px;">药品名：</td>
+                <td>
+                    <input type="text" name="spmc"  style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 10px;">生产企业名称：</td>
+                <td>
+                    <input type="text" name="scqymc"  style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 69px;" align="left">交易状态：
+                    <input name="jyzt" editable="false" type="text" url="/sys/dictTypes?code=003" valueField="dictcode" style="height: 28px;" textField="info" class="easyui-combobox" />
+                </td>
+                <td style="padding-left: 10px;">
+                    <a href="#" id="clearSearch" class="easyui-linkbutton" iconCls="icon-no">清空查询条件</a>
+
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-left: 10px;">单位:</td>
+                <td>
+                    <input   name="dw" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=dw01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox "/>
+                </td>
+                <td style="padding-left: 10px;">剂型:</td>
+                <td>
+                    <input name="jx" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=jx01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox  " />
+                </td>
+                <td style="padding-left: 10px;">药品类别:</td>
+                <td>
+                    <input name="lb" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=001" valueField="id" textField="info"  type="text" class="easyui-validatebox easyui-combobox " />
+                </td>
+                <td style="padding-left: 10px;">中标价格：
+                    <input type="text" class="easyui-numberbox" name="startZbjg" style="height: 28px;width: 90px;"/>至
+                    <input type="text" class="easyui-numberbox" name="endZbjg" style="height: 28px;width: 90px;"/>
+                </td>
+                <td style="padding-left: 10px;">
+                    <!--添加查询条件-->
+                    <a href="#" id="searchYpxx" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                    <a href="#" id="cancelSearch" class="easyui-linkbutton" iconCls="icon-no">取消</a>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div  region="center"  style="padding:5px;background:#eee;">
+    <!--操作栏-->
+    <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+        <a shiro:hasPermission ="operation_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addYpxx()" iconCls="icon-add">添加药品信息</a>
+        <a shiro:hasPermission ="operation_update" id="btn2" href="#" class="easyui-linkbutton" onclick="editYpxx()" iconCls="icon-edit">修改药品信息</a>
+        <a shiro:hasPermission ="operation_delete" id="btn3" href="#" class="easyui-linkbutton" onclick="deleteYpxx()" iconCls="icon-cancel">删除药品信息</a>
+        <a shiro:hasPermission ="operation_delete" id="btn4" href="#" class="easyui-linkbutton" onclick="searchYpxx()" iconCls="icon-search">查询药品信息</a>
+        <a  href="#" class="easyui-linkbutton" onclick="doImportYpxx()" iconCls="icon-undo">导入药品信息</a>
+        <a   href="#" class="easyui-linkbutton" onclick="doExportYpxx()" iconCls="icon-redo">导出药品信息</a>
+    </div>
+    <!--使用datagrid加载药瓶信息-->
+    <table id="ypxxList" ></table>
+    <!--添加药品信息 -->
+    <div id="addYpxxWindow" modal=true title="添加药品信息" class="easyui-dialog" closed="true" style="width: 650px; height: 650px;;background: #efefef;" >
+        <form  id="addYpxxForm" action="" method="post">
+            <div class="formbody">
+                <div class="formtitle"><span>药品基本信息</span></div>
+                <ul class="forminfo">
+                    <li><label >药品流水号</label><i  class=" dfinput" style="color: red">药品流水号由系统生成</i></li>
+                    <li><label>药品名</label><input name="spmc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="药品名称必填!" /></li>
+                    <li><label>生产企业名称</label><input name="scqymc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="生成企业名称必填!" /></li>
+                    <li><label>中标价格</label><input name="zbjg" type="text" class="easyui-validatebox dfinput easyui-numberbox" required="true" missingMessage="中标价格必填!" /></li>
+                    <li><label>批准文号</label><input name="pzwh" type="text" class="dfinput easyui-numberbox" /></li>
+                    <li><label>药品通用名</label><input name="mc" type="text" class="dfinput " /></li>
+                    <li><label>药品规格</label><input name="gg" type="text" class="dfinput " /></li>
+                    <li><label>交易状态</label><input name="jyzt" type="text" class="easyui-combobox dfinput" editable="false" url="/sys/dictTypes?code=003" valueField="dictcode" textField="info"/>
+                        药品单位:<input name="dw" type="text" class="easyui-combobox dfinput"  editable="false"  url="/sys/dictTypes?code=dw01" valueField="info" textField="info" /> </li>
+                    <li><label>药品剂型</label><input name="jx" type="text" class="easyui-combobox dfinput"  editable="false"  url="/sys/dictTypes?code=jx01" valueField="info" textField="info"/>
+                        药品类别:<input name="lb" type="text" class="easyui-combobox dfinput"  editable="false"  url="/sys/dictTypes?code=001" valueField="id" textField="info"/> </li>
+                    <li><label>&nbsp;</label>
+                        <input  type="button" class="btn saveYpxx" value="确认保存"/>
+                        <input type="button" class="btn cancelYpxx" value="取消"/>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+    <!--修改药品信息 -->
+    <div id="editYpxxWindow" modal=true title="修改药品信息" class="easyui-dialog" closed="true" style="width: 650px; height: 650px;;background: #efefef;" >
+        <form  id="editYpxxForm" action="" method="post">
+            <input type="hidden" name="id"/>
+            <div class="formbody">
+                <div class="formtitle"><span>药品基本信息</span></div>
+                <ul class="forminfo">
+                    <li><label >药品流水号</label><input name="bm" type="text" class="dfinput" disabled="false"></li>
+                    <li><label>药品名</label><input name="spmc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="药品名称必填!" /></li>
+                    <li><label>生产企业名称</label><input name="scqymc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="生成企业名称必填!" /></li>
+                    <li><label>中标价格</label><input name="zbjg" type="text" class="easyui-validatebox dfinput easyui-numberbox" required="true" missingMessage="中标价格必填!" /></li>
+                    <li><label>批准文号</label><input name="pzwh" type="text" class="dfinput easyui-numberbox" /></li>
+                    <li><label>药品通用名</label><input name="mc" type="text" class="dfinput " /></li>
+                    <li><label>药品规格</label><input name="gg" type="text" class="dfinput " /></li>
+                    <li><label>交易状态</label><input name="jyzt" type="text" class="easyui-combobox dfinput" editable="false" url="/sys/dictTypes?code=003" valueField="dictcode" textField="info"/>
+                        药品单位:<input name="dw" type="text" class="easyui-combobox dfinput"  editable="false"  url="/sys/dictTypes?code=dw01" valueField="info" textField="info" /> </li>
+                    <li><label>药品剂型</label><input name="jx" type="text" class="easyui-combobox dfinput"  editable="false"  url="/sys/dictTypes?code=jx01" valueField="info" textField="info"/>
+                        药品类别:<input name="lb" type="text" class="easyui-combobox dfinput"  editable="false"  url="/sys/dictTypes?code=001" valueField="id" textField="info"/> </li>
+                    <li><label>&nbsp;</label>
+                        <input  type="button" class="btn saveYpxx" value="确认保存"/>
+                        <input type="button" class="btn cancelYpxx" value="取消"/>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

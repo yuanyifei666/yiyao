@@ -1,0 +1,305 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http:www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>系统登录</title>
+<link href="css/login.css" rel="stylesheet" rev="stylesheet" type="text/css" media="all" />
+<link href="css/demo.css" rel="stylesheet" rev="stylesheet" type="text/css" media="all" />
+
+
+	<!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+
+	<link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+	<link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+	<!--引入easy-ui开发所需的js和css-->
+
+	<!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+	<script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+	<!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+	<script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+	<!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+	<script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+
+<script type="text/javascript" src="js/jquery.SuperSlide.js"></script>
+<script type="text/javascript" src="js/Validform_v5.3.2_min.js"></script>
+	<style>
+		/* 滑动控件容器,亮灰色背景 */
+		#dragContainer {
+			position: relative;
+			display: inline-block;
+			background: #e8e8e8;
+			width: 240px;
+			height: 50px;
+			border: 2px solid #e8e8e8;
+		}
+		/* 滑块左边部分,绿色背景 */
+		#dragBg {
+			position: absolute;
+			background-color: #7ac23c;
+			width: 0px;
+			height: 100%;
+		}
+		/* 滑动验证容器文本 */
+		#dragText {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			/* 文字水平居中 */
+			text-align: center;
+			/* 文字垂直居中,这里不能用百分比,因为百分比是相对原始line-height的,而非div高度 */
+			line-height: 50px;
+			/* 文本不允许选中 */
+			user-select: none;
+			-webkit-user-select: none;
+		}
+		/* 滑块 */
+		#dragHandler {
+			position: absolute;
+			width: 30px;
+			height: 100%;
+			cursor: move;
+		}
+		/* 滑块初始背景 */
+		.dragHandlerBg {
+			background: #fff no-repeat center url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0ZDhlNWY5My05NmI0LTRlNWQtOGFjYi03ZTY4OGYyMTU2ZTYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NTEyNTVEMURGMkVFMTFFNEI5NDBCMjQ2M0ExMDQ1OUYiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NTEyNTVEMUNGMkVFMTFFNEI5NDBCMjQ2M0ExMDQ1OUYiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2MTc5NzNmZS02OTQxLTQyOTYtYTIwNi02NDI2YTNkOWU5YmUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NGQ4ZTVmOTMtOTZiNC00ZTVkLThhY2ItN2U2ODhmMjE1NmU2Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+YiRG4AAAALFJREFUeNpi/P//PwMlgImBQkA9A+bOnfsIiBOxKcInh+yCaCDuByoswaIOpxwjciACFegBqZ1AvBSIS5OTk/8TkmNEjwWgQiUgtQuIjwAxUF3yX3xyGIEIFLwHpKyAWB+I1xGSwxULIGf9A7mQkBwTlhBXAFLHgPgqEAcTkmNCU6AL9d8WII4HOvk3ITkWJAXWUMlOoGQHmsE45ViQ2KuBuASoYC4Wf+OUYxz6mQkgwAAN9mIrUReCXgAAAABJRU5ErkJggg==");
+		}
+		/* 验证成功时的滑块背景 */
+		.dragHandlerOkBg {
+			background: #fff no-repeat center url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0ZDhlNWY5My05NmI0LTRlNWQtOGFjYi03ZTY4OGYyMTU2ZTYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NDlBRDI3NjVGMkQ2MTFFNEI5NDBCMjQ2M0ExMDQ1OUYiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NDlBRDI3NjRGMkQ2MTFFNEI5NDBCMjQ2M0ExMDQ1OUYiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDphNWEzMWNhMC1hYmViLTQxNWEtYTEwZS04Y2U5NzRlN2Q4YTEiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NGQ4ZTVmOTMtOTZiNC00ZTVkLThhY2ItN2U2ODhmMjE1NmU2Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+k+sHwwAAASZJREFUeNpi/P//PwMyKD8uZw+kUoDYEYgloMIvgHg/EM/ptHx0EFk9I8wAoEZ+IDUPiIMY8IN1QJwENOgj3ACo5gNAbMBAHLgAxA4gQ5igAnNJ0MwAVTsX7IKyY7L2UNuJAf+AmAmJ78AEDTBiwGYg5gbifCSxFCZoaBMCy4A4GOjnH0D6DpK4IxNSVIHAfSDOAeLraJrjgJp/AwPbHMhejiQnwYRmUzNQ4VQgDQqXK0ia/0I17wJiPmQNTNBEAgMlQIWiQA2vgWw7QppBekGxsAjIiEUSBNnsBDWEAY9mEFgMMgBk00E0iZtA7AHEctDQ58MRuA6wlLgGFMoMpIG1QFeGwAIxGZo8GUhIysmwQGSAZgwHaEZhICIzOaBkJkqyM0CAAQDGx279Jf50AAAAAABJRU5ErkJggg==");
+		}
+	</style>
+	<script type="text/javascript">
+
+		//定义一个验证标记位
+		var f = false;
+
+        window.onload = function() {
+            var dragContainer = document.getElementById("dragContainer");
+            var dragBg = document.getElementById("dragBg");
+            var dragText = document.getElementById("dragText");
+            var dragHandler = document.getElementById("dragHandler");
+
+            //滑块最大偏移量
+            var maxHandlerOffset = dragContainer.clientWidth - dragHandler.clientWidth;
+            //是否验证成功的标记
+            var isVertifySucc = false;
+            initDrag();
+
+            function initDrag() {
+                dragText.textContent = "拖动滑块验证";
+                dragHandler.addEventListener("mousedown", onDragHandlerMouseDown);
+
+                dragHandler.addEventListener("touchstart", onDragHandlerMouseDown);
+            }
+
+            function onDragHandlerMouseDown(event) {
+                document.addEventListener("mousemove", onDragHandlerMouseMove);
+                document.addEventListener("mouseup", onDragHandlerMouseUp);
+
+                document.addEventListener("touchmove", onDragHandlerMouseMove);
+                document.addEventListener("touchend", onDragHandlerMouseUp);
+            }
+
+            function onDragHandlerMouseMove(event) {
+                /*
+                html元素不存在width属性,只有clientWidth
+                offsetX是相对当前元素的,clientX和pageX是相对其父元素的event.clientX || event.changedTouches[0].clientX) - dragHandler.clientWidth / 2
+                touches：表示当前跟踪的触摸操作的touch对象的数组。
+                targetTouches：特定于事件目标的Touch对象的数组。
+            　　changedTouches：表示自上次触摸以来发生了什么改变的Touch对象的数组。
+                */
+                var left = (event.offsetX || event.changedTouches[0].offsetX) - dragHandler.clientWidth ;
+                if(left < 0) {
+                    left = 0;
+                } else if(left > maxHandlerOffset) {
+                    left = maxHandlerOffset;
+                    verifySucc();
+                }
+                dragHandler.style.left = left + "px";
+                dragBg.style.width = dragHandler.style.left;
+            }
+            function onDragHandlerMouseUp(event) {
+                document.removeEventListener("mousemove", onDragHandlerMouseMove);
+                document.removeEventListener("mouseup", onDragHandlerMouseUp);
+
+                document.removeEventListener("touchmove", onDragHandlerMouseMove);
+                document.removeEventListener("touchend", onDragHandlerMouseUp);
+
+                dragHandler.style.left = 0;
+                dragBg.style.width = 0;
+            }
+
+            //验证成功
+            function verifySucc() {
+                //可以 在这里做回调处理
+                f = true;
+                isVertifySucc = true;
+                dragText.textContent = "验证通过";
+                dragText.style.color = "white";
+                dragHandler.setAttribute("class", "dragHandlerOkBg");
+
+                dragHandler.removeEventListener("mousedown", onDragHandlerMouseDown);
+                document.removeEventListener("mousemove", onDragHandlerMouseMove);
+                document.removeEventListener("mouseup", onDragHandlerMouseUp);
+
+                dragHandler.removeEventListener("touchstart", onDragHandlerMouseDown);
+                document.removeEventListener("touchmove", onDragHandlerMouseMove);
+                document.removeEventListener("touchend", onDragHandlerMouseUp);
+            };
+
+
+            //给提交按钮绑定点击事件
+			$("#send-btn").click(function(){
+			    //判断表单输入的数据是否合法
+                if (f&&name&&pass){
+                 	//得到表单中的数据
+					var data = $(".registerform").serialize();
+
+					//发送ajax请求进行登录
+					$.ajax({
+						url : '/login',
+						type : 'post',
+						dataType : 'text',
+
+						data : data,
+						success : function (result) {
+							//跳转到系统主页:result=1表示登录成功，2表示登录失败!
+							if (result == 1){
+							    //登录成功，跳转到系统主页
+								window.location.href = "/main";
+							} else {
+							    //重新登录
+                                window.location.href = "/";
+
+								$("#msg").html("用户名或者密码错误!");
+							}
+                        },
+						error : function () {
+
+                        }
+
+					});
+
+                }
+				return ;
+			});
+        }
+
+        var name = false;
+        var pass = false;
+        //用户名和密码验证方法
+        function usernameMatch(){
+            if ($("#username").val()==""){
+                name = false;
+                $("#msg").html("输入的用户名不能为空！");
+            }else {
+                name = true;
+                $("#msg").html("");
+            }
+        }
+        function passwordMatch(){
+            if ($("#password").val()==""){
+                pass = false;
+                $("#msg").html("输入的密码不能为空！");
+            } else {
+                pass = true;
+                $("#msg").html("");
+            }
+        }
+
+        //是否提交表单
+		function matchForm(){
+            //判断表单是否可以提交
+			if (f&&name&&pass){
+			    return true;
+			}
+			return false;
+		}
+	</script>
+
+
+
+</head>
+
+<body>
+
+
+<div class="header">
+  <h1 class="headerLogo"><a title="医药采购后台管理系统" target="_blank" href="#"><img alt="logo" src="images/logo.gif"></a></h1>
+	<div class="headerNav">
+		<a target="_blank" href="www.baidu.com">企业官网</a>
+		<a target="_blank" href="#">关于我们</a>
+		<a target="_blank" href="#">开发团队</a>
+		<a target="_blank" href="#">意见反馈</a>
+		<a target="_blank" href="#">帮助</a>
+	</div>
+</div>
+
+<div class="banner">
+
+<div class="login-aside">
+  <div id="o-box-up"></div>
+  <div id="o-box-down"  style="table-layout:fixed;">
+   <div class="error-box"></div>
+
+	  <span id="msg" style="color: red;">[[${msg}]]</span>
+   <form class="registerform"action="" th:action="@{/login}" method="post">
+	   <div class="fm-item">
+		   <label for="logonId" class="form-label">医药采购系统登陆：</label>
+		   <input type="text" placeholder ="输入账号" maxlength="100" id="username" name ="username"class="i-text" ajaxurl="demo/valid.jsp" onblur="usernameMatch()" datatype="s6-18"  >
+		   <div class="ui-form-explain"></div>
+	  </div>
+
+	  <div class="fm-item">
+		   <label for="logonId" class="form-label">登陆密码：</label>
+		   <input type="password" placeholder="请输入密码" maxlength="100" name="pwd" id="password" class="i-text" datatype="*6-16" nullmsg="请设置密码！" onblur="passwordMatch()" >
+		   <div class="ui-form-explain"></div>
+	  </div>
+
+	  <div class="fm-item pos-r">
+		   <label for="logonId" class="form-label">验证码</label>
+		  <div id="dragContainer">
+			  <div id="dragBg"></div>
+			  <div id="dragText"></div>
+			  <div id="dragHandler" class="dragHandlerBg"></div>
+		  </div>
+	  </div>
+
+	  <div class="fm-item">
+		   <label for="logonId" class="form-label"></label>
+		   <input type="button" value="" tabindex="4" id="send-btn" class="btn-login">
+		   <div class="ui-form-explain"></div>
+	  </div>
+
+  </form>
+
+
+  </div>
+
+</div>
+
+	<div class="bd">
+		<ul>
+			<li style="background:url(themes/theme-pic1.jpg) #CCE1F3 center 0 no-repeat;"></li>
+			<li style="background:url(themes/theme-pic2.jpg) #BCE0FF center 0 no-repeat;"></li>
+		</ul>
+	</div>
+
+	<div class="hd"><ul></ul></div>
+</div>
+
+
+<div class="banner-shadow"></div>
+
+<div class="footer">
+   <p>Copyright &copy; 2018.Company name All rights reserved.More Templates <a href="#" target="_blank" title="医药采购系统">医药采购系统</a> </p>
+</div>
+
+
+
+
+</body>
+</html>
