@@ -45,11 +45,6 @@
             width : 90,
             align : 'center'
         },{
-            field : 'pzwh',
-            title : '批准文号',
-            width : 120,
-            align : 'center'
-        },{
             field : 'jyztmc',
             title : '交易状态',
             width : 100,
@@ -168,6 +163,10 @@
                     //关闭修改窗口
                     $("#editYpxxWindow").dialog('close');
                 }
+                if (ypxxWindowState == 'export'){
+                   //关闭导入药品信息窗口
+                   $("#importYpxxWindow").dialog('close');
+                }
             });
 
             //给查询条件窗口取消按钮绑定点击事件
@@ -215,6 +214,18 @@
                     endZbjg : searchData.endZbjg
                 });
             });
+            //给导入窗口的确认按钮绑定点击
+            $(".importYpxx").click(function () {
+                $("#importYpxxForm").form('submit',{
+                    url :'/ypxx/importYpxx',
+                    success : function (result) {
+                        //关闭窗口
+                        $("#importYpxxWindow").dialog('close');
+                        $.messager.alert("信息提示",result,'info');
+                    }
+                });
+            });
+
             ////////////////////////////////////////
         });
         //统一错误提示
@@ -339,9 +350,15 @@
 
         //实现药品信息的导入
         function doImportYpxx(){
-            $.messager.alert("导出提示"
-                ,"导入药品信息先要下载模板，严格按照模板进行填写药品信息:<a href='/ypxxtemplate/ypxx_template.xls' style='color:green;'>点击下载模板</a>" +
-                "<input type='file' style='padding-left: 40px;' name='yiyao_template'value='选择要导入的文件'/>",'info');
+            ypxxWindowState = 'export';
+            //打开导入药品信息窗口
+            $("#importYpxxWindow").dialog('open');
+            //清空表单
+            $("#importYpxxForm").form('clear');
+            // $.messager.alert("导出提示"
+            //     ,"导入药品信息先要下载模板，严格按照模板进行填写药品信息:<a href='/ypxxtemplate/ypxx_template.xls' style='color:green;'>点击下载模板</a>" +
+            //     "<input type='file' style='padding-left: 40px;' name='yiyao_template'value='选择要导入的文件'/>",'info');
+
         }
     </script>
 
@@ -402,17 +419,17 @@
 <div  region="center"  style="padding:5px;background:#eee;">
     <!--操作栏-->
     <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
-        <a shiro:hasPermission ="operation_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addYpxx()" iconCls="icon-add">添加药品信息</a>
-        <a shiro:hasPermission ="operation_update" id="btn2" href="#" class="easyui-linkbutton" onclick="editYpxx()" iconCls="icon-edit">修改药品信息</a>
-        <a shiro:hasPermission ="operation_delete" id="btn3" href="#" class="easyui-linkbutton" onclick="deleteYpxx()" iconCls="icon-cancel">删除药品信息</a>
-        <a shiro:hasPermission ="operation_delete" id="btn4" href="#" class="easyui-linkbutton" onclick="searchYpxx()" iconCls="icon-search">查询药品信息</a>
-        <a  href="#" class="easyui-linkbutton" onclick="doImportYpxx()" iconCls="icon-undo">导入药品信息</a>
-        <a   href="#" class="easyui-linkbutton" onclick="doExportYpxx()" iconCls="icon-redo">导出药品信息</a>
+        <a shiro:hasPermission ="ypxx_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addYpxx()" iconCls="icon-add">添加药品信息</a>
+        <a shiro:hasPermission ="ypxx_update" id="btn2" href="#" class="easyui-linkbutton" onclick="editYpxx()" iconCls="icon-edit">修改药品信息</a>
+        <a shiro:hasPermission ="ypxx_delete" id="btn3" href="#" class="easyui-linkbutton" onclick="deleteYpxx()" iconCls="icon-cancel">删除药品信息</a>
+        <a shiro:hasPermission ="ypxx_search" id="btn4" href="#" class="easyui-linkbutton" onclick="searchYpxx()" iconCls="icon-search">查询药品信息</a>
+        <a shiro:hasPermission="ypxx_import" href="#" class="easyui-linkbutton" onclick="doImportYpxx()" iconCls="icon-undo">导入药品信息</a>
+        <a  shiro:hasPermission="ypxx_export" href="#" class="easyui-linkbutton" onclick="doExportYpxx()" iconCls="icon-redo">导出药品信息</a>
     </div>
     <!--使用datagrid加载药瓶信息-->
     <table id="ypxxList" ></table>
     <!--添加药品信息 -->
-    <div id="addYpxxWindow" modal=true title="添加药品信息" class="easyui-dialog" closed="true" style="width: 650px; height: 650px;;background: #efefef;" >
+    <div id="addYpxxWindow" modal=true title="添加药品信息" class="easyui-dialog" closed="true" style="width: 650px; height: 650px;background: #efefef;" >
         <form  id="addYpxxForm" action="" method="post">
             <div class="formbody">
                 <div class="formtitle"><span>药品基本信息</span></div>
@@ -437,7 +454,7 @@
         </form>
     </div>
     <!--修改药品信息 -->
-    <div id="editYpxxWindow" modal=true title="修改药品信息" class="easyui-dialog" closed="true" style="width: 650px; height: 650px;;background: #efefef;" >
+    <div id="editYpxxWindow" modal=true title="修改药品信息" class="easyui-dialog" closed="true" style="width: 650px; height: 650px;background: #efefef;" >
         <form  id="editYpxxForm" action="" method="post">
             <input type="hidden" name="id"/>
             <div class="formbody">
@@ -462,6 +479,20 @@
             </div>
         </form>
     </div>
+
+    <!--上传文件-->
+    <div id="importYpxxWindow" title="导入药品信息" background=" url(images/messager_info.gif) no-repeat scroll left top;" class="easyui-dialog" closed="true" style="width: 300px;height: 200px;background: #efefef;">
+            <img src="/images/messager_info.gif">
+        导入药品信息先要下载模板，严格按照模板进行填写药品信息,否则可能导致无法正常导入药品数据:<a href='/ypxxtemplate/ypxx_template.xls' style='color:green;'>点击下载模板</a>
+        <form id="importYpxxForm" action="" method="post" enctype="multipart/form-data">
+            <input type='file' style='padding-left: 40px;' name='ypxxFile'/>
+            <li style="padding-top: 10px"><label>&nbsp;</label>
+                <input  type="button" class="btn importYpxx" value="确认导入"/>
+                <input type="button" class="btn cancelYpxx" value="取消"/>
+            </li>
+        </form>
+    </div>
+
 </div>
 </body>
 </html>

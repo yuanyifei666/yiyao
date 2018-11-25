@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>企业药品目录维护页面</title>
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+        //定义供应药品目录列表字段
+        var columns = [[{
+            checkbox : true
+        },{
+            field : 'bm',
+            title : '药品流水号',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'spmc',
+            title : '药品名',
+            width :120,
+            align : 'center'
+        },{
+            field : 'scqymc',
+            title : '生产企业名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'zbjg',
+            title : '中标价',
+            width : 90,
+            align : 'center'
+        },{
+            field : 'jyztmc',
+            title : '交易状态',
+            width : 100,
+            align : 'center',
+            formatter : function (value ,row,index) {
+                if (value == '正常'){
+                    return '<font style="color :green">'+value+'</font>';
+                } else{
+                    return '<font style="color :red">'+value+'</font>';
+                }
+            }
+        },{
+            field : 'dw',
+            title : '单位',
+            width : 70,
+            align : 'center'
+        },{
+            field : 'mc',
+            title : '通用名',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'jx',
+            title : '剂型',
+            width : 100,
+            align : 'center'
+        },{
+            field : 'gg',
+            title : '规格',
+            width : 110,
+            align : 'center'
+        },{
+            field : 'blmc',
+            title : '药品类别',
+            width : 150,
+            align : 'center'
+        }]];
+        //预加载
+        $(function () {
+           //加载供应药品信息
+            $("#gysYpList").datagrid({
+               idField : 'id',
+                url : '/ypxx/gysYps',
+                method : 'get',
+                rownumbers : true,
+                striped : true,
+                pagination : true,
+                pageList : [20,30,40],
+                columns : columns
+            });
+
+        });
+
+    </script>
+
+</head>
+<body>
+
+<!--操作栏-->
+<div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+    <a shiro:hasPermission ="gysypml_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addGysYp()" iconCls="icon-add">供应药品添加</a>
+    <a shiro:hasPermission ="gysypml_delete" id="btn3" href="#" class="easyui-linkbutton" onclick="deleteGysYp()" iconCls="icon-cancel">供应药品删除</a>
+    <a shiro:hasPermission ="gysypml_update" id="btn2" href="#" class="easyui-linkbutton" onclick="editGysYp()" iconCls="icon-edit">供应药品修改</a>
+</div>
+    <!--企业药品列表    -->
+    <table id="gysYpList"></table>
+
+</body>
+</html>

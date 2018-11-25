@@ -1,4 +1,4 @@
-package com.yuan.yiyao.ypxx;
+package com.yuan.yiyao.ypxx.dto;
 
 import com.yuan.yiyao.ypxx.vo.Ypxx;
 import lombok.AllArgsConstructor;
@@ -20,4 +20,5 @@ public class YpxxDTO extends Ypxx {
     private Integer begin;//开始查询记录
     private Float startZbjg;
     private Float endZbjg;
+    private String sysid;
 }

@@ -2,8 +2,8 @@ package com.yuan.yiyao.ypxx.service.impl;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.yuan.yiyao.sys.dto.DataGridResultDTO;
-import com.yuan.yiyao.ypxx.YpxxDTO;
-import com.yuan.yiyao.ypxx.YpxxRepository;
+import com.yuan.yiyao.ypxx.dto.YpxxDTO;
+import com.yuan.yiyao.ypxx.repository.YpxxRepository;
 import com.yuan.yiyao.ypxx.service.YpxxService;
 import com.yuan.yiyao.ypxx.vo.Ypxx;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 /**

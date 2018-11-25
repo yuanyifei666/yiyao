@@ -1,6 +1,7 @@
-package com.yuan.yiyao.ypxx;
+package com.yuan.yiyao.ypxx.repository;
 
 import com.baomidou.mybatisplus.mapper.BaseMapper;
+import com.yuan.yiyao.ypxx.dto.YpxxDTO;
 import com.yuan.yiyao.ypxx.vo.Ypxx;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -9,7 +10,7 @@ import java.util.List;
 
 /**
  * 药品信息维护数据访问层
- * SELECT YP.ID,YP.BM,YP.SCQYMC,YP.ZBJG,YP.ZLCC,YP.CPSM,YP.JYZT,YP.DW,YP.MC,YP.JX,YP.GG,YP.ZHXS,YP.LB,DICT.INFO JYZTMC,DICTLB.INFO BLMC FROM YPXX YP LEFT JOIN DICTINFO DICT ON YP.JYZT = DICT.DICTCODE LEFT JOIN DICTINFO DICTLB ON YP.LB = DICTLB.ID WHERE DICT.TYPECODE='003'  LIMIT 0,40 ;
+ *  SELECT YP.ID,YP.BM,YP.SCQYMC,YP.ZBJG,YP.ZLCC,YP.CPSM,YP.JYZT,YP.DW,YP.MC,YP.JX,YP.GG,YP.ZHXS,YP.LB,DICT.INFO JYZTMC,DICTLB.INFO BLMC FROM YPXX YP LEFT JOIN DICTINFO DICT ON YP.JYZT = DICT.DICTCODE LEFT JOIN DICTINFO DICTLB ON YP.LB = DICTLB.ID WHERE DICT.TYPECODE='003'  LIMIT 0,40 ;
  */
 @Mapper
 public interface YpxxRepository extends BaseMapper<Ypxx> {
