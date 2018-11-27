@@ -27,7 +27,7 @@ public interface GysYpMLRepository {
             "  FROM YPXX YP " +
             " LEFT JOIN DICTINFO DICTLB ON YP.LB = DICTLB.ID  " +
             "    ) YPML ,GYSYPML GYS ,GYSYPML_CONTROL JD ,USERGYS USERGYS " +
-            " WHERE YPML.ID = GYS.YPXXID AND GYS.USERGYSID = JD.usergysid AND JD.YPXXID = YPML.ID  AND JD.USERGYSID = USERGYS.ID" +
+            " WHERE YPML.ID = GYS.YPXXID AND GYS.USERGYSID = JD.usergysid AND JD.YPXXID = YPML.ID  AND JD.USERGYSID = USERGYS.ID AND GYS.USERGYSID = #{sysid} " +
             " ) P LEFT JOIN DICTINFO DICT ON P.CONTROL = DICT.DICTCODE WHERE DICT.TYPECODE='003' " +
             " <when test=' bm != null and bm != \"\"'>"+
             " AND P.BM like CONCAT('%',#{bm},'%') "+

@@ -125,7 +125,6 @@ public interface JdYpMLRepository {
             " <when test='endMong !=null '>"+
             " AND P.MONY &lt; #{endMong} "+
             " </when>"+
-            " LIMIT #{begin},#{rows}"+
             " </script> ")
     int findYpmlJdCount(YpJdDTO ypJdDTO);
 
@@ -135,4 +134,15 @@ public interface JdYpMLRepository {
      */
     @Update("UPDATE GYSYPML_CONTROL SET  CONTROL = #{control} ,ADVICE =  #{advice} WHERE YPXXID = #{ypxxid} AND USERGYSID = #{usergysid};")
     void updateJdYpmlControl(YpJdDTO ypJdDTO);
+
+    /**
+     * 根据药品信息id和供应商id查询信息
+     * @param ypxxid
+     * @param usergysid
+     * @return
+     */
+    @Select("SELECT * FROM GYSYPML_CONTROL WHERE YPXXID = #{param1} AND USERGYSID = #{param2};")
+    YpJdDTO findYpmlJdByYpxxidAndUsergysid(String ypxxid, String usergysid);
+
+
 }

@@ -65,7 +65,7 @@ public class MyShiroConfig {
       if (operations!=null){
             for (Operation operation : operations){
                 if (operation.getCode() !=null){
-                    filterMap.put(operation.getUrl(),"perms["+operation.getCode()+"]");
+                    filterMap.put(operation.getUrl().trim(),"perms["+operation.getCode().trim()+"]");
                 }
             }
         }

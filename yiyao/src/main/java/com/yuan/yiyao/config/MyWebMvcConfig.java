@@ -42,6 +42,8 @@ public class MyWebMvcConfig extends WebMvcConfigurerAdapter {
         registry.addViewController("/ypxx/gysYpMLPage").setViewName("pages/ypxx/gysYpMLList");
         //跳转到企业药品目录维护页面
         registry.addViewController("/ypxx/jdYpMLPage").setViewName("pages/ypxx/jdYpMLList");
+        //跳转到采购目录维护页面
+        registry.addViewController("/ypxx/yyYpmlPage").setViewName("pages/ypxx/yyYpmlList");
     }
 
 

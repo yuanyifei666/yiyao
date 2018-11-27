@@ -52,7 +52,7 @@ public class MyUserRealm extends AuthorizingRealm {
             for (Operation operation:operations
                  ) {
                 if (operation.getCode() !=null){
-                    info.addStringPermission(operation.getCode());
+                    info.addStringPermission(operation.getCode().trim());
                 }
             }
             return info;
@@ -62,7 +62,10 @@ public class MyUserRealm extends AuthorizingRealm {
         System.out.println("进行授权。。。。。。。。。。"+permis.size());
         //根据得到当前用户拥有的权限
         SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
-        info.addStringPermissions(permis);
+        for (String permi:permis
+             ) {
+            info.addStringPermission(permi.trim());
+        }
 
         return info;
     }

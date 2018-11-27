@@ -42,7 +42,6 @@ public class GysYpMLServiceImpl implements GysYpMLService {
     public DataGridResultDTO findByGysYpML( YpxxDTO ypxxDTO) {
         if (ypxxDTO.getSysid() != null &&!"".equals(ypxxDTO.getSysid())){
             //设置查询条件
-            
             ypxxDTO.setBegin((ypxxDTO.getPage()-1)*ypxxDTO.getRows());
             DataGridResultDTO resultDTO = new DataGridResultDTO();
             //给用户的单位id查询该供货企业的供货药品目录

@@ -5,9 +5,9 @@ spring:
     cache: false
   datasource:
     driverClassName: com.mysql.jdbc.Driver
-    url: jdbc:mysql://111.230.130.100:3306/yycg_project?useUnicode=true&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/yycg?useUnicode=true&characterEncoding=UTF-8
     username: root
-    password: 123456
+    password: 1234
   mvc:
     favicon:
       enabled: false
