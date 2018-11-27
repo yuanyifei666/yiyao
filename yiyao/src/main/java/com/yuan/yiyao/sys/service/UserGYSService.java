@@ -15,4 +15,9 @@ public interface UserGYSService {
     void updateUserGYS(UserGYS userGYS);
 
     DataGridResultDTO findUserGYSByPage(UserGYS userGYS,Integer page,Integer rows);
+
+    List<UserGYS> findUserGysList();
+
+
+
 }

@@ -6,25 +6,28 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 药品信息的传输对象
+ * 药品监督
  */
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class YpxxDTO extends Ypxx {
+public class YpJdDTO extends Ypxx {
 
-    private String jyztmc; //交易状态名称
+    private String ypxxid; //药品信息id
+    private String usergysid ; //供货企业id
+    private String control; //监控状态
+    private String advice ; //监控已将
+    private String controlmc;
     private String blmc; //药品类别名称
+    private Float mony;//零售价
+    private String ypmc; //药品名称
+    private String gysmc;//供货企业名称
     private Integer page;
     private Integer rows;
-    private Integer begin;//开始查询记录
+    private Integer begin;
+
     private Float startZbjg;
     private Float endZbjg;
-    private String sysid;
-    private Float mony;//零售价
-    private String ypmc;
     private Float startMong;
     private Float endMong;
-    private String controlmc;
-    private String advice ; //监控已将
 }

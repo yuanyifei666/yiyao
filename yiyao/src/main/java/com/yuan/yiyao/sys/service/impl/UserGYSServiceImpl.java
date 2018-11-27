@@ -121,4 +121,9 @@ public class UserGYSServiceImpl implements UserGYSService {
 
         return new DataGridResultDTO(null,null,total,list);
     }
+
+    @Override
+    public List<UserGYS> findUserGysList() {
+        return repository.selectList(new EntityWrapper<UserGYS>());
+    }
 }

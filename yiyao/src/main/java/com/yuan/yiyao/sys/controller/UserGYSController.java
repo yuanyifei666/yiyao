@@ -77,6 +77,13 @@ public class UserGYSController {
         return "供应商信息修改成功!";
     }
 
-
+    /**
+     * 查询所有的供应商单位名称
+     */
+    @GetMapping("/usergysall")
+    @ResponseBody
+    public List<UserGYS> findUsergysList()throws Exception{
+        return userGYSService.findUserGysList();
+    }
 
 }

@@ -519,7 +519,7 @@
 </head>
 <body id="searchSysUserWindow" class="easyui-layout">
 
-    <div region="north" title="用户查询条件" iconCls="icon-search" style="height: 130px;" collapsed="true">
+    <div region="north" shiro:hasPermission ="sysUser_search" title="用户查询条件" iconCls="icon-search" style="height: 130px;" collapsed="true">
         <form id="searchSysUserForm" action="" method="post">
             <table>
                 <tr>

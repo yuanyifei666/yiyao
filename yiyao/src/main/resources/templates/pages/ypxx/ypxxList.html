@@ -18,7 +18,7 @@
 
     <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
     <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
-
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
     <script type="text/javascript" th:inline="none">
 
         //定义药品信息列表单元格
@@ -179,23 +179,6 @@
                 $("#searchYpxxForm").form('clear');
             });
 
-            //========把表单中的数据变成json数据格式
-            $.fn.serializeObject = function()
-            {
-                var o = {};
-                var a = this.serializeArray();
-                $.each(a, function() {
-                    if (o[this.name]) {
-                        if (!o[this.name].push) {
-                            o[this.name] = [o[this.name]];
-                        }
-                        o[this.name].push(this.value || '');
-                    } else {
-                        o[this.name] = this.value || '';
-                    }
-                });
-                return o;
-            };
 
             //给查询条件窗口绑定点击事件
             $("#searchYpxx").click(function () {
@@ -365,7 +348,7 @@
 </head>
 <body id="ypxxWindow" class="easyui-layout">
 
-<div region="north" title="药品查询条件" split="true" iconCls="icon-search"  style="width:100px;height:145px;" collapsed="true">
+<div region="north" shiro:hasPermission ="ypxx_search" title="药品查询条件" split="true" iconCls="icon-search"  style="width:100px;height:145px;" collapsed="true">
     <form id="searchYpxxForm" action="" method="post">
         <table>
             <tr>
@@ -437,7 +420,7 @@
                     <li><label >药品流水号</label><i  class=" dfinput" style="color: red">药品流水号由系统生成</i></li>
                     <li><label>药品名</label><input name="spmc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="药品名称必填!" /></li>
                     <li><label>生产企业名称</label><input name="scqymc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="生成企业名称必填!" /></li>
-                    <li><label>中标价格</label><input name="zbjg" type="text" class="easyui-validatebox dfinput easyui-numberbox" required="true" missingMessage="中标价格必填!" /></li>
+                    <li><label>中标价格</label><input name="zbjg" type="text" class="easyui-validatebox dfinput easyui-numberbox" min="0" max="99999999"  required="true" missingMessage="中标价格必填!" /></li>
                     <li><label>批准文号</label><input name="pzwh" type="text" class="dfinput easyui-numberbox" /></li>
                     <li><label>药品通用名</label><input name="mc" type="text" class="dfinput " /></li>
                     <li><label>药品规格</label><input name="gg" type="text" class="dfinput " /></li>
@@ -463,7 +446,7 @@
                     <li><label >药品流水号</label><input name="bm" type="text" class="dfinput" disabled="false"></li>
                     <li><label>药品名</label><input name="spmc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="药品名称必填!" /></li>
                     <li><label>生产企业名称</label><input name="scqymc" type="text" class="easyui-validatebox dfinput" required="true" missingMessage="生成企业名称必填!" /></li>
-                    <li><label>中标价格</label><input name="zbjg" type="text" class="easyui-validatebox dfinput easyui-numberbox" required="true" missingMessage="中标价格必填!" /></li>
+                    <li><label>中标价格</label><input name="zbjg" type="text" class="easyui-validatebox dfinput easyui-numberbox" min="0" max="99999999"  required="true" missingMessage="中标价格必填!" /></li>
                     <li><label>批准文号</label><input name="pzwh" type="text" class="dfinput easyui-numberbox" /></li>
                     <li><label>药品通用名</label><input name="mc" type="text" class="dfinput " /></li>
                     <li><label>药品规格</label><input name="gg" type="text" class="dfinput " /></li>

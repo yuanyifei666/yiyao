@@ -18,10 +18,100 @@
 
     <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
     <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
 
     <script type="text/javascript" th:inline="none">
         //定义供应药品目录列表字段
         var columns = [[{
+            checkbox : true
+        },{
+            field : 'bm',
+            title : '药品流水号',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'ypmc',
+            title : '药品名',
+            width :120,
+            align : 'center'
+        },{
+            field : 'scqymc',
+            title : '生产企业名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'zbjg',
+            title : '中标价',
+            width : 90,
+            align : 'center',
+            formatter : function (value,row,index) {
+                return '<font style="color :red">'+value+'</font>';
+            }
+        },{
+            field : 'mony',
+            title : '零售价',
+            width : 90,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :orangered">'+value+'</font>';
+                } else{
+                    return "";
+                }
+
+            }
+        },{
+            field : 'controlmc',
+            title : '交易状态',
+            width : 100,
+            align : 'center',
+            formatter : function (value ,row,index) {
+                if (value == '正常'){
+                    return '<font style="color :green">'+value+'</font>';
+                } else{
+                    return '<font style="color :red">'+value+'</font>';
+                }
+            }
+        },{
+            field : 'dw',
+            title : '单位',
+            width : 70,
+            align : 'center'
+        },{
+            field : 'mc',
+            title : '通用名',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'jx',
+            title : '剂型',
+            width : 100,
+            align : 'center'
+        },{
+            field : 'gg',
+            title : '规格',
+            width : 110,
+            align : 'center'
+        },{
+            field : 'blmc',
+            title : '药品类别',
+            width : 150,
+            align : 'center'
+        },{
+            field : 'advice',
+            title : '监督机构意见',
+            width : 120,
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :orangered">'+value+'</font>';
+                } else{
+                    return "";
+                }
+            }
+        }]];
+
+        //定义供应药品目录列表字段
+        var columnsYpxx = [[{
             checkbox : true
         },{
             field : 'bm',
@@ -94,22 +184,430 @@
                 pageList : [20,30,40],
                 columns : columns
             });
+            //给修改药品信息窗口取消按钮绑定点击事件
+            $(".cancelGysYpxx").click(function () {
+               $("#editGysYpxxWindow").dialog('close');
+            });
+            //自定义零售 价格的验证规则
+            $.extend($.fn.validatebox.defaults.rules, {
+                equals: {
+                    validator: function(value,param){
+                        var zbjg = parseFloat($(param[0]).val());
+                        if (value<=zbjg){
+                            return true;
+                        } else{
+                            return false;
+                        }
+                    },
+                    message: '输入的零售价格不能大于中标价格！'
+                }
+            });
+            //保存修改的供应药品信息
+            $(".saveGysYpxx").click(function () {
+               //验证表单输入的输入是否合法
+                var f = $("#editGysYpxxForm").form('validate');
+                if(!f){
+                    return;
+                }
+                //得到表单的数据
+                var  data = $("#editGysYpxxForm").serialize();
+                //发送请求修改数据
+                $.ajax({
+                   url : '/ypxx/gysypxx_update',
+                   type : 'put',
+                   dataType : 'text',
+                    data : data,
+                    success : function (result) {
+                        $("#editGysYpxxWindow").dialog('close');
+                        showMsg(result);
+                        $("#gysYpList").datagrid('reload');
+                    },
+                    error : function () {
+                        showError();
+                    }
+                });
 
+            });
+        ///////////////////////////////////////////////////
         });
+        //=========================供应药品目录的页面业务============
+        var gysSearchWindow = false;
+        //删除供应药品信息
+        function deleteGysYp(){
+            //得到选择的行
+            var rows = $("#gysYpList").datagrid('getSelections');
+            if(rows.length == 0){
+                showMsg("请选择要移除的药品");
+                return;
+            }
+            //确认提示
+            $.messager.confirm("提示信息","是否移除不再供应选择的药品？",function (r) {
+                if (!r){
+                    return;
+                }
+               //得到选择的药品信息id
+                var ypxxids = "";
+                for (var i=0;i<rows.length;i++){
+                    if (i == 0){
+                        ypxxids += "ypxxids="+rows[i].id;
+                    }else {
+                        ypxxids += "&ypxxids="+rows[i].id;
+                    }
+                }
+                //发送请求删除数据
+                $.ajax({
+                   url : '/ypxx/gysypxx_delete' ,
+                    type : 'delete',
+                    dataType : 'text',
+                    data : ypxxids,
+                    success : function (result) {
+                        showMsg(result);
+                        //刷新页面
+                        $("#gysYpList").datagrid('reload');
+                        //清除选择的行
+                        $("#gysYpList").datagrid('clearSelections');
+                    },
+                    error : function () {
+                        showError();
+                    }
+                });
+
+            });
+        }
+
+        //修改药品信息
+        function editGysYp(){
+            //得到选择的行
+            var rows = $("#gysYpList").datagrid('getSelections');
+            if (rows.length != 1){
+                showMsg("请选择一条要修改的药品信息！");
+                return;
+            }
+            //打开修改药品信息窗口
+            $("#editGysYpxxWindow").dialog('open');
+            //回显数据
+            $("#editGysYpxxForm").form('load',rows[0]);
+
+        }   
+        //供应药品查询
+        function  searchGysYp() {
+            if (gysSearchWindow){
+                return;
+            }
+            //打开查询面板
+            $("#gysYpWindow").layout('expand','north');
+            clearSearchGysYpxx();
+            gysSearchWindow = true;
+        }
+        //清空供应药品查询表单数据
+        function clearSearchGysYpxx(){
+            //清除 表单中d的数据
+            $("#searchGysYpxxForm").form('clear');
+        }
+        //取消查询供应药品
+        function cancelSearchGysYp(){
+            $("#gysYpWindow").layout('collapse','north');
+            gysSearchWindow = false;
+        }
+        //查询供应药品
+        function searchGysYpxx(){
+            //得到表单中的数据
+            var searchData = $("#searchGysYpxxForm").serializeObject();
+            //条件查询药品信息
+            $("#gysYpList").datagrid('reload',{
+                bm : searchData.bm,
+                ypmc : searchData.ypmc,
+                scqymc : searchData.scqymc,
+                startMong : searchData.startMong,
+                endMong : searchData.endMong,
+                dw : searchData.dw,
+                jx : searchData.jx,
+                lb : searchData.lb,
+                startZbjg : searchData.startZbjg,
+                endZbjg : searchData.endZbjg
+            });
+
+        }
+
+        //=============================供应药品添加 业务============================
+        var addGysYpxxWindowState = false;
+        //添加药品信息
+        function addGysYp(){
+
+            //打开药品添加窗口
+            $("#addGysYpWindow").dialog('open');
+            //加载药品信息
+            loadYpxxList();
+            //清除选择的行
+            $("#ypxxList").datagrid('clearSelections');
+
+        }
+        //加载药品信息
+        function  loadYpxxList() {
+            $("#ypxxList").datagrid({
+                idField : 'id',
+                url : '/ypxx/ypxxsbygys',
+                method : 'get',
+                rownumbers : true,
+                striped : true,
+                pagination : true,
+                pageList : [15,20,30],
+                columns : columnsYpxx
+            });
+        }
+        //药品 添加查询
+        function searchYpxx() {
+            if (addGysYpxxWindowState){
+                return;
+            }
+            //打开查询窗口
+            $("#addGysYpWindow").layout('expand','north');
+            clearSearchForm();
+            addGysYpxxWindowState = true;
+        }
+        //清空表单数据
+        function clearSearchForm(){
+            //清空查询表单的内容
+            $("#searchYpxxForm").form('clear');
+        }
+        //关闭供应药品查询窗口
+        function  closeSearchYpxxWindow() {
+            $("#addGysYpWindow").layout('collapse','north');
+            addGysYpxxWindowState = false;
+        }
+        //========把表单中的数据变成json数据格式
+
+        //查询药品信息
+        function searchYpxxByGYS(){
+            //得到表单中输入的查询条件
+            var searchData = $("#searchYpxxForm").serializeObject();
+            //条件查询药品信息
+            $("#ypxxList").datagrid('reload',{
+                bm : searchData.bm,
+                spmc : searchData.spmc,
+                scqymc : searchData.scqymc,
+                jyzt : searchData.jyzt,
+                dw : searchData.dw,
+                jx : searchData.jx,
+                lb : searchData.lb,
+                startZbjg : searchData.startZbjg,
+                endZbjg : searchData.endZbjg
+            });
+        }
+        //关闭添加供应药品窗口
+        function cancelAddYpxx() {
+            $("#addGysYpWindow").dialog('close');
+        }
+        //添加供应药品
+        function  addGysYpxx() {
+            //得到选择要供应的药品信息
+            var rows = $("#ypxxList").datagrid('getSelections');
+            if (rows.length == 0){
+                    showMsg("请选择要供应的药品信息");
+                    return;
+            }
+            //提示是否确认添加
+            $.messager.confirm("添加药品提示","确认要添加选择的药品吗？",function (f) {
+                if (!f){
+                    return;
+                }
+                var ypxxids = "";
+                for (var i=0;i<rows.length;i++){
+                    if (i == 0){
+                        ypxxids += "ypxxids="+rows[i].id;
+                    }else {
+                        ypxxids += "&ypxxids="+rows[i].id;
+                    }
+                }
+                //发送请求添加药品
+                $.ajax({
+                    url : '/ypxx/gysypxx_add',
+                    type : 'post',
+                    dataType : 'html',
+                    data : ypxxids,
+                    success : function (result) {
+                       $.messager.alert("添加提示",result,'info');
+                        //刷新页面
+                        $("#ypxxList").datagrid('reload');
+                        //清空选择的行
+                        $("#ypxxList").datagrid('clearSelections');
+                        //刷新供应药品目录
+                        $("#gysYpList").datagrid('reload');
+                    },
+                    error : function(){
+                        showError();
+                    }
+                });
+            });
+        }
+        //统一错误提示
+        function showError(){
+            $.messager.alert("信息提示","系统繁忙，请稍后重试.........",'info');
+        }
+        //统一提示信息
+        function  showMsg(msg) {
+            $.messager.show({
+                title : '提示信息',
+                msg : msg,
+                timeout : 4000
+            });
+        }
 
     </script>
 
 </head>
-<body>
-
-<!--操作栏-->
-<div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
-    <a shiro:hasPermission ="gysypml_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addGysYp()" iconCls="icon-add">供应药品添加</a>
-    <a shiro:hasPermission ="gysypml_delete" id="btn3" href="#" class="easyui-linkbutton" onclick="deleteGysYp()" iconCls="icon-cancel">供应药品删除</a>
-    <a shiro:hasPermission ="gysypml_update" id="btn2" href="#" class="easyui-linkbutton" onclick="editGysYp()" iconCls="icon-edit">供应药品修改</a>
+<body id="gysYpWindow" class="easyui-layout">
+    <!--查询面板-->
+    <div region="north"  shiro:hasPermission ="gysypml_search"  title="供应药品查询条件" split="true" iconCls="icon-search"  style="width:100px;height:145px;" collapsed="true">
+    <form id="searchGysYpxxForm" action="" method="post">
+        <table>
+            <tr>
+                <td style="padding-left: 10px;">药品流水号：</td>
+                <td >
+                    <input type="text" name="bm" style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 10px;">药品名：</td>
+                <td>
+                    <input type="text" name="ypmc"  style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 10px;">生产企业名称：</td>
+                <td>
+                    <input type="text" name="scqymc"  style="height: 28px;"/>
+                </td>
+                <td style="padding-left: 10px;">零售价格：
+                    <input type="text" class="easyui-numberbox" min="0" max="99999999" name="startMong" style="height: 28px;width: 90px;"/>至
+                    <input type="text" class="easyui-numberbox" min="0" max="99999999" name="endMong" style="height: 28px;width: 90px;"/>
+                </td>
+                <td style="padding-left: 10px;">
+                    <a href="#" onclick="clearSearchGysYpxx()" class="easyui-linkbutton" iconCls="icon-no">清空查询条件</a>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-left: 10px;">单位:</td>
+                <td>
+                    <input   name="dw" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=dw01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox "/>
+                </td>
+                <td style="padding-left: 10px;">剂型:</td>
+                <td>
+                    <input name="jx" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=jx01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox  " />
+                </td>
+                <td style="padding-left: 10px;">药品类别:</td>
+                <td>
+                    <input name="lb" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=001" valueField="id" textField="info"  type="text" class="easyui-validatebox easyui-combobox " />
+                </td>
+                <td style="padding-left: 10px;">中标价格：
+                    <input type="text" class="easyui-numberbox" min="0" max="99999999" name="startZbjg" style="height: 28px;width: 90px;"/>至
+                    <input type="text" class="easyui-numberbox" min="0" max="99999999" name="endZbjg" style="height: 28px;width: 90px;"/>
+                </td>
+                <td style="padding-left: 10px;">
+                    <!--添加查询条件-->
+                    <a href="#" onclick="searchGysYpxx()" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                    <a href="#" onclick="cancelSearchGysYp()" class="easyui-linkbutton" iconCls="icon-no">取消</a>
+                </td>
+            </tr>
+        </table>
+    </form>
 </div>
-    <!--企业药品列表    -->
-    <table id="gysYpList"></table>
 
+    <div region="center" style="padding:5px;background:#eee;">
+        <!--操作栏-->
+        <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+            <a shiro:hasPermission ="gysypml_add" id="btn1" href="#" class="easyui-linkbutton" onclick="addGysYp()" iconCls="icon-add">供应药品添加</a>
+            <a shiro:hasPermission ="gysypml_delete" id="btn3" href="#" class="easyui-linkbutton" onclick="deleteGysYp()" iconCls="icon-cancel">供应药品删除</a>
+            <a shiro:hasPermission ="gysypml_update"  href="#" class="easyui-linkbutton" onclick="editGysYp()" iconCls="icon-edit">供应药品修改</a>
+            <a shiro:hasPermission ="gysypml_search"  href="#" class="easyui-linkbutton" onclick="searchGysYp()" iconCls="icon-search">供应药品查询</a>
+        </div>
+        <!--企业药品列表    -->
+        <table id="gysYpList"></table>
+        <!--修改药品信息 -->
+        <div id="editGysYpxxWindow" modal=true title="修改药品信息" class="easyui-dialog" closed="true" style="width: 550px; height: 650px;background: #efefef;" >
+            <form  id="editGysYpxxForm" action="" method="post">
+                <input type="hidden" name="id"/>
+                <div class="formbody">
+                    <div class="formtitle"><span>药品基本信息(<font style="color: red;">注意：只能修改药品名、零售价格</font>)</span></div>
+                    <ul class="forminfo">
+                        <li><label >药品流水号</label><input name="bm" type="text" class="dfinput" disabled="false"></li>
+                        <li><label>药品名</label><input name="ypmc" type="text"  class="easyui-validatebox dfinput" required="true" missingMessage="药品名称必填!" /></li>
+                        <li><label>生产企业名称</label><input name="scqymc" type="text" disabled="false" class=" dfinput"   /></li>
+                        <li><label>中标价格</label><input name="zbjg" id="zbjg" type="text" disabled="false" class=" dfinput easyui-numberbox" /></li>
+                        <li><label>零售价格</label><input name="mony" type="text"  class="easyui-validatebox dfinput easyui-numberbox" min="0" max="99999999"  validType="equals['#zbjg']"  required="true"  missingMessage="零售价格必填!" /></li>
+                        <li><label>药品通用名</label><input name="mc" type="text" disabled="false" class="dfinput " /></li>
+                        <li><label>药品规格</label><input name="gg" disabled="false" type="text" class="dfinput " /></li>
+                        <li><label>交易状态</label><input name="jyztmc" style="width: 130px;" disabled="false" class=" dfinput" />
+                            药品单位:<input name="dw" type="text" class=" dfinput" style="width: 130px;" disabled="false" /> </li>
+                        <li><label>药品剂型</label><input name="jx" type="text" style="width: 130px;" class=" dfinput"  disabled="false" />
+                            药品类别:<input name="blmc" type="text" class=" dfinput"  style="width: 130px;" disabled="false"  /> </li>
+                        <li><label>&nbsp;</label>
+                            <input  type="button" class="btn saveGysYpxx" value="确认保存"/>
+                            <input type="button" class="btn cancelGysYpxx" value="取消"/>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!--药品添窗口-->
+        <div id="addGysYpWindow" title="添加供应药品" class="easyui-dialog easyui-layout" closed="true" style="width: 1200px;height: 650px;">
+            <div region="north" title="药品查询条件" split="true" iconCls="icon-search"  style="width:100px;height:145px;" collapsed="true">
+                <form id="searchYpxxForm" action="" method="post">
+                    <table>
+                        <tr>
+                            <td style="padding-left: 10px;">药品流水号：</td>
+                            <td >
+                                <input type="text" name="bm" style="height: 28px;"/>
+                            </td>
+                            <td style="padding-left: 10px;">药品名：</td>
+                            <td>
+                                <input type="text" name="spmc"  style="height: 28px;"/>
+                            </td>
+                            <td style="padding-left: 10px;">生产企业名称：</td>
+                            <td>
+                                <input type="text" name="scqymc"  style="height: 28px;"/>
+                            </td>
+                            <td style="padding-left: 69px;" align="left">交易状态：
+                                <input name="jyzt" editable="false" type="text" url="/sys/dictTypes?code=003" valueField="dictcode" style="height: 28px;" textField="info" class="easyui-combobox" />
+                            </td>
+                            <td style="padding-left: 10px;">
+                                <a href="#"  class="easyui-linkbutton" onclick="clearSearchForm()" iconCls="icon-no">清空查询条件</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding-left: 10px;">单位:</td>
+                            <td>
+                                <input   name="dw" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=dw01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox "/>
+                            </td>
+                            <td style="padding-left: 10px;">剂型:</td>
+                            <td>
+                                <input name="jx" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=jx01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox  " />
+                            </td>
+                            <td style="padding-left: 10px;">药品类别:</td>
+                            <td>
+                                <input name="lb" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=001" valueField="id" textField="info"  type="text" class="easyui-validatebox easyui-combobox " />
+                            </td>
+                            <td style="padding-left: 10px;">中标价格：
+                                <input type="text" class="easyui-numberbox" name="startZbjg" style="height: 28px;width: 90px;"/>至
+                                <input type="text" class="easyui-numberbox" name="endZbjg" style="height: 28px;width: 90px;"/>
+                            </td>
+                            <td style="padding-left: 10px;">
+                                <!--添加查询条件-->
+                                <a href="#" onclick="searchYpxxByGYS()" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                                <a href="#" onclick="closeSearchYpxxWindow()" class="easyui-linkbutton" iconCls="icon-no">取消</a>
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div  region="center"  style="padding:5px;background:#eee;">
+                <!--操作栏-->
+                <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+                    <a  href="#" class="easyui-linkbutton" onclick="addGysYpxx()" iconCls="icon-add">确认添加</a>
+                    <a  href="#" class="easyui-linkbutton" onclick="searchYpxx()" iconCls="icon-search">药品查询</a>
+                    <a  href="#" class="easyui-linkbutton" onclick="cancelAddYpxx()" iconCls="icon-cancel">取消添加</a>
+                </div>
+                <!--使用datagrid加载药瓶信息-->
+                <table id="ypxxList" ></table>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
