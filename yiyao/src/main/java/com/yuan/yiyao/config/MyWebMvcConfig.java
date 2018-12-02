@@ -44,6 +44,19 @@ public class MyWebMvcConfig extends WebMvcConfigurerAdapter {
         registry.addViewController("/ypxx/jdYpMLPage").setViewName("pages/ypxx/jdYpMLList");
         //跳转到采购目录维护页面
         registry.addViewController("/ypxx/yyYpmlPage").setViewName("pages/ypxx/yyYpmlList");
+        //跳转到采购目录维护页面
+        registry.addViewController("/cgd/cgdListPage").setViewName("pages/cgd/cgdList");
+
+        //跳转到采购查询页面
+        registry.addViewController("/cgd/cgdSearch").setViewName("pages/cgd/cgdSearchList");
+        //跳转到采购审核页面
+        registry.addViewController("/cgd/cgdcontrolPage").setViewName("pages/cgd/cgdControlList");
+         //跳转到采购受理页面
+        registry.addViewController("/cgd/gysCgdPage").setViewName("pages/cgd/cgdAcceptList");
+        //跳转到采购受理页面
+        registry.addViewController("/cgd/yprkPage").setViewName("pages/cgd/yprkList");
+
+
     }
 
 

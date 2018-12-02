@@ -1,5 +1,6 @@
 package com.yuan.yiyao.ypxx.repository;
 
+import com.yuan.yiyao.ypxx.dto.GysYpDTO;
 import com.yuan.yiyao.ypxx.dto.YpxxDTO;
 import org.apache.ibatis.annotations.*;
 
@@ -214,4 +215,13 @@ public interface GysYpMLRepository {
      */
     @Update("UPDATE GYSYPML SET MONY = #{mony} , YPMC = #{ypmc} WHERE YPXXID = #{id} AND USERGYSID= #{sysid};")
     void upateGysYpxx(YpxxDTO ypxxDTO);
+
+    /**
+     * 根据药品id和供应企业id查询
+     * @param ypxxid
+     * @param usergysid
+     * @return
+     */
+    @Select("SELECT *  FROM GYSYPML WHERE YPXXID = #{param1} AND USERGYSID = #{param2}")
+    GysYpDTO findGysYpmlByYpxxidAndUsergysid(String ypxxid, String usergysid);
 }

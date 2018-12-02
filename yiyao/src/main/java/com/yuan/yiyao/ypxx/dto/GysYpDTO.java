@@ -15,6 +15,8 @@ public class GysYpDTO extends YpxxDTO {
 
     private String gysid ;//企业的id
     private String gysmc ; //企业的名称
+    private String ypxxid;
+    private String usergysid;
 
 
 }

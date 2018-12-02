@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>医院药品入库</title>
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+        //定义数据表格的单元格属性
+        var columns = [[
+            {
+                checkbox : true
+            },{
+            field : 'bm',
+            title : '药品流水号',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (!row.id){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return value
+                }
+            }
+        },{
+            field : 'mc',
+            title : '通用名',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'cgdbm',
+            title : '采购单编号',
+            width : 130,
+            align : 'center'
+        },{
+            field : 'rkl',
+            title : '入库量',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                var rkl = "";
+                if (!value){
+                    rkl = "";
+                }else{
+                    rkl = value;
+                }
+                return '<input disabled="false"  style="width: 90px;height: 18px;" type="text" name="rkl" value="'+rkl+'"/>';
+            }
+        },{
+            field : 'ypyxq',
+            title : '药品有效期',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                var ypyxq = "";
+                if (!value){
+                    ypyxq = "";
+                }else{
+                    ypyxq = value;
+                }
+                return '<input disabled="false"  style="width:112px;height: 18px;"type="text" name="ypyxq" value="'+ypyxq+'"/>';
+            }
+        },{
+            field : 'cgdmc',
+            title : '采购单名称',
+            width : 200
+        },{
+            field : 'gysmc',
+            title : '供货企业',
+            width : 180,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :green">'+value+'</font>';
+                } else{
+                    return "";
+                }
+            }
+        },{
+            field : 'scqymc',
+            title : '生产企业名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'zbjg',
+            title : '中标价',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return "";
+                }
+            }
+        },{
+            field : 'jyjg',
+            title : '零售价',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :orangered">'+value+'</font>';
+                } else{
+                    return "";
+                }
+
+            }
+        },{
+            field : 'cgl',
+            title : '采购量',
+            width : 80,
+            align : 'center'
+        },{
+            field : 'lbmc',
+            title : '药品类别',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'id',
+            title : '采购药品入库',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                var ind = index;
+                var f = 'yprk('+ind+')';
+                return '<a href="#" onclick="'+f+'" style="color: darkolivegreen">入库</a>';
+            }
+        }]];
+
+        $(function () {
+           //加载发货的药品信息
+            $("#yprkList").datagrid({
+               idField : 'id',
+               url : '/cgd/yprks',
+                method : 'get',
+                rownumbers : true,
+                striped : true,
+                pagination : true,
+                pageList : [20,30,40],
+                columns : columns
+            });
+
+        });
+        //==========================================
+        var rkl ;//入库量
+        //药品入库
+        function yprk(index){
+            var yprkList =  $("#yprkList");
+            yprkList.datagrid('clearSelections');
+            yprkList.datagrid('selectRow',index);
+            var rows = yprkList.datagrid('getSelections');
+
+            //打开入库信息输入框
+            $("#yprkWindow").dialog('open');
+            $("#yprkForm").form('clear');
+            $("#cgdBm").val(rows[0].cgdbm);
+            $("#cgdMc").val(rows[0].cgdmc);
+            $("#bm").val(rows[0].bm);
+            $("#mc").val(rows[0].mc);
+            $("#cgdid").val(rows[0].yycgdid);
+            $("#ypxxid").val(rows[0].ypxxid);
+            $("#rkje").val(rows[0].jyjg);
+            $("#rk2").val(rows[0].cgl);
+
+            $("#ypyxq").datetimebox('setValue',rows[0].ypyxq);
+            rkl = rows[0].cgl;
+        }
+        //取消药品入库
+        function cancelYprk(){
+            //关闭填写药品入库信息窗口
+            $("#yprkWindow").dialog('close');
+        }
+        //保存药品入库信息
+        function  saveYprkButtom() {
+            var f = $("#yprkForm").form('validate');
+            if (!f){
+                return;
+            }
+            //得到表单中的信息
+            var data = $("#yprkForm").serialize();
+            $.ajax({
+                url : '/cgd/yprk_save',
+                type : 'post',
+                dataType : 'html',
+                data : data,
+                success : function (result) {
+                    //关闭窗口
+                    $("#yprkWindow").dialog('close');
+                    $("#yprkList").datagrid('reload');
+                    $("#yprkList").datagrid('clearSelections');
+                },
+                error : function () {
+                    showError();
+                }
+            });
+        }
+
+        //提交入库
+        function submitYprkButtom(){
+            var f = $("#yprkForm").form('validate');
+            if (!f){
+                return;
+            }
+            //确认提示
+            $.messager.confirm("提交提示","确认入库该采购药品？",function (f) {
+                if (!f){
+                    return;
+                }
+                //得到表单中的信息
+                var data = $("#yprkForm").serialize();
+                $.ajax({
+                    url : '/cgd/yprk_submit',
+                    type : 'post',
+                    dataType : 'html',
+                    data : data,
+                    success : function (result) {
+                        showMsg(result);
+                        //关闭窗口
+                        $("#yprkWindow").dialog('close');
+                        $("#yprkList").datagrid('reload');
+                        $("#yprkList").datagrid('clearSelections');
+                    },
+                    error : function () {
+                        showError();
+                    }
+                });
+            });
+        }
+
+        //批量入库
+        function  doYprk() {
+            //得到选择要入库的行
+            var rows = $("#yprkList").datagrid('getSelections');
+            if(rows.length == 0){
+                showMsg("请选择要入库的采购药品");
+                return ;
+            }
+            //确认提示
+            $.messager.confirm("提交提示","确认提交采购药品入库?",function (f) {
+                if (!f){
+                    return;
+                }
+                var rks = "";
+                for (var i=0;i<rows.length;i++){
+                    var yycgdid = rows[i].yycgdid;
+                    var ypxxid = rows[i].ypxxid;
+
+                    if (i == 0){
+                        rks += "rks="+yycgdid+"##"+ypxxid;
+                    } else {
+                        rks += "&rks="+yycgdid+"##"+ypxxid;
+                    }
+                }
+
+                //发送请求提交入库
+                $.ajax({
+                    url : '/cgd/yprk_submit',
+                    type : 'post',
+                    dataType : 'html',
+                    data : rks,
+                    success : function (result) {
+                        //关闭窗口
+                        showMsg(result);
+                        $("#yprkList").datagrid('reload');
+                        $("#yprkList").datagrid('clearSelections');
+                    },
+                    error : function () {
+                        showError();
+                    }
+                });
+            });
+        }
+
+        //统一信息提示
+        function showMsg (msg){
+            $.messager.show({
+                title : '信息提示',
+                msg : msg ,
+                timeout : 4000
+            });
+        }
+        //统一错误提示信息
+        function showError(){
+            $.messager.alert("系统提示","系统繁忙，请稍后重试.....",'info');
+        }
+        $.extend($.fn.validatebox.defaults.rules, {
+            rklMatch: {
+                validator: function(value,param){
+                    if (value <= rkl){
+                        return true;
+                    }
+                    return false;
+                },
+                message: '输入的入库量不能大于采购量！'
+            }
+        });
+
+    </script>
+
+</head>
+<body>
+
+    <div style="padding-top: 10px;width: 100%;height: 32px;background: #efefef;">
+        <a   href="#" shiro:hasPermission="yprk_submit" class="easyui-linkbutton" onclick="doYprk()" iconCls="icon-redo">采购药品入库</a>
+    </div>
+    <!--列出已经发货的药品信息-->
+    <table id="yprkList"></table>
+
+    <!--采购药品入库输入框-->
+    <div  style="background-color: #eeeeee;width: 500px;height: 700px;" title="采购药品入库" id="yprkWindow"  modal="true" class="easyui-dialog" closed="true">
+        <form  id="yprkForm" action="" method="post" >
+            <input type="hidden" id="cgdid" name="yycgdid" />
+            <input type="hidden" id="ypxxid"  name="ypxxid"/>
+            <input type="hidden" id="rkje"  name="rkje"/>
+            <div class="formbody">
+                <div class="formtitle"><span>采购药品入库基本信息【<font style="color:red;">注意：请填写正确的入库量和药品有效期</font>】</span></div>
+                <ul class="forminfo">
+                            <li><label class="cgdInput" >采购单编号:</label><input id="cgdBm" name="cgdbm"  disabled="false" type="text" class=" cgdInput dfinput"  /></li>
+                            <li><label class="cgdInput" >采购单名称:</label><input id="cgdMc" name="cgdmc" disabled="false" type="text" class=" cgdInput dfinput"/></li>
+
+                            <li><label class="cgdInput" style="padding-right: 10px;">药品编号:</label><input id="bm" name="bm"  disabled="false"  type="text" class=" cgdInput dfinput"  /></li>
+                            <li><label class="cgdInput" style="padding-right: 24px;">药品名称:</label><input id="mc"  name="mc" disabled="false"  type="text" class=" cgdInput dfinput" /></li>
+
+                    <li><label class="cgdInput" style="padding-right: 10px;">入库量:</label><input name="rkl"id="rk2" type="text" min="0" max="9999999999" class="easyui-numberbox easyui-validatebox cgdInput  dfinput" validType="rklMatch['#rkl']" required="true" missingMessage="药品入库量必填!" /></li>
+                            <li><label class="cgdInput"style="padding-right: 24px;">药品有效期:</label><input  id="ypyxq" name="ypyxq" editable="false" type="text" class="easyui-validatebox easyui-datetimebox cgdInput dfinput"/></li>
+
+                    </table>
+                    <li><label style="margin-left: 220px">&nbsp;</label>
+                        <table>
+                            <tr>
+                                <input  type="button" onclick="saveYprkButtom()" class="btn " value="确认保存"/>
+                                <input type="button" class="btn " onclick="cancelYprk()" value="取消"/>
+                                <input  type="button" onclick="submitYprkButtom()" style="color: #cc933b;" class="btn " value="提交入库"/>
+                            </tr>
+                        </table>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

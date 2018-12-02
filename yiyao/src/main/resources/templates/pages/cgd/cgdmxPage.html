@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>查询采购单详情</title>
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
+    <style>
+        .cgdInput{
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+    </style>
+
+    <script type="text/javascript" th:inline="none">
+
+        //采购明细列表单元格属性
+        var cgdMxColumns = [[{
+            field : 'bm',
+            title : '药品流水号',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (!row.id){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return value
+                }
+            }
+        },{
+            field : 'mc',
+            title : '通用名',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'gysmc',
+            title : '供货企业',
+            width : 180,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :green">'+value+'</font>';
+                } else{
+                    return "";
+                }
+            }
+        },{
+            field : 'scqymc',
+            title : '生产企业名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'zbjg',
+            title : '中标价',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return "";
+                }
+            }
+        },{
+            field : 'jyjg',
+            title : '零售价',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :orangered">'+value+'</font>';
+                } else{
+                    return "";
+                }
+
+            }
+        },{
+            field : 'lbmc',
+            title : '药品类别',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'cgl',
+            title : '采购量',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                return '<font style="color :red">'+value+'</font>';
+            }
+        },{
+            field : 'cgje',
+            title : '采购金额',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (!row.id){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return '<font style="color :green">'+value+'</font>';
+                }
+            }
+        },{
+            field : 'cgzt',
+            title : '采购状态',
+                width : 120,
+                align : 'center',
+                formatter : function (value,row,index) {
+                    if (value == '1'){
+                        return '<font style="color :orange">待发货</font>';
+                    }
+                    if (value == '2'){
+                        return '<font style="color :green">已发货</font>';
+                    }
+                    if (value == '3'){
+                        return '<font style="color :blueviolet">已入库</font>';
+                    }
+                    if (value == '4'){
+                      return '<font style="color :red">无法供货</font>';
+                    }
+
+            }
+        }]];
+        //预加载
+        $(function () {
+            var cgdid = $("#cgdid").val();
+            $("#yyypmlList").datagrid({
+                idField : 'id',
+                url : '/cgd/cgdmxs?yycgdid='+cgdid,
+                method : 'get',
+                striped : true,
+                rownumbers : true,
+                pagination : true,
+                pageList : [10,20,30],
+                columns : cgdMxColumns,
+                rowStyler: function(index,row){
+                    if (!row.id){
+                        return 'background-color:#99BBE8;color:#fff;';
+                    }
+                }
+            });
+
+        });
+
+        //取消修改采购单
+        function cancelAddCgd(){
+            window.location.href = "/cgd/cgdSearch";
+        }
+
+        //提示信息
+        function showMsg(result){
+            $.messager.show({
+                title : '信息提示',
+                msg : result,
+                timeout : 4000
+            })
+        }
+    </script>
+</head>
+<body >
+
+<!--采购单基本信息-->
+<div  style="background-color: #eeeeee" >
+    <!--采购单基本信息 -->
+    <form  id="editCgdForm" action="" method="post" >
+        <input type="hidden" id="cgdid" name="id" th:value="${cgd.id}"/>
+        <input type="hidden" name="useryyid" th:value="${cgd.useryyid}"/>
+        <div class="formbody">
+            <div class="formtitle"><span>采购单基本信息</span></div>
+            <ul class="forminfo">
+                <table align="center">
+                    <tr class="cgdInput">
+                        <td class="cgdInput"><label class="cgdInput" >采购单编号:</label><input id="cgdBm" th:value="${cgd.bm}" disabled="false" type="text" class=" cgdInput dfinput"  /></td>
+                        <td class="cgdInput"><label class="cgdInput" >采购单名称:</label><input id="cgdMc" th:value="${cgd.mc}" disabled="false" type="text" class=" cgdInput dfinput"/></td>
+                    </tr>
+                    <tr class="cgdInput">
+                        <td class="cgdInput"><label class="cgdInput" style="padding-right: 10px;">医院名称:</label><input id="cgdYymc" th:value="${cgd.yymc}"  disabled="false"  type="text" class=" cgdInput dfinput"  /></td>
+                        <td class="cgdInput"><label class="cgdInput" style="padding-right: 24px;">联系人:</label><input  name="lxr" th:value="${cgd.lxr}" disabled="false"  type="text" class="easyui-validatebox cgdInput dfinput" required="true" missingMessage="联系人必填！"/></td>
+                    </tr>
+                    <tr class="cgdInput">
+                        <td class="cgdInput"><label class="cgdInput" style="padding-right: 10px;">联系电话:</label><input name="lxdh" disabled="false" th:value="${cgd.lxdh}" type="text" class="easyui-numberbox easyui-validatebox cgdInput  dfinput" validType="minlength[11]" required="true" missingMessage="联系电话必填!" /></td>
+                        <td class="cgdInput"><label class="cgdInput"style="padding-right: 24px;">创建人:</label><input  name="cjr" disabled="false" th:value="${cgd.cjr}"  type="text" class="cgdInput dfinput"/></td>
+                    </tr>
+
+                </table>
+                <table>
+                    <tr>
+                        <td><label class="cgdInput" >备注/说明:</label></td>
+                        <td><textarea disabled="false" class="cgdInput" style="width: 249px;height: 100px;">[[${cgd.bz}]]</textarea></td>
+                        <td th:if="${cgd.zt}=='3'"><label class="cgdInput" >审核意见:</label></td>
+                        <td th:if="${cgd.zt}=='3'"><textarea name="shyj" disabled="false" class="cgdInput" style="width: 249px;height: 100px;">[[${cgd.shyj}]]</textarea></td>
+                        <td ><label class="cgdInput " >采购单状态:</label>
+                            <input  disabled="false" style="color:orangered;width: 131px;height: 32px;" th:value="${cgd.ztmc}" type="text" class=" cgdInput dfinput"/>
+                        </td>
+                    </tr>
+                </table>
+                <li ><label style="margin-left: 220px">&nbsp;</label>
+                    <table>
+                        <tr >
+                            <input type="button" class="btn " onclick="cancelAddCgd()" value="返回"/>
+                        </tr>
+                    </table>
+                </li>
+            </ul>
+        </div>
+    </form>
+</div>
+
+<div id="cgdmxListWindow" >
+    <!--分割面板-->
+    <div   style="background:#066bac;height:24px;color: #cc933b">采购药品明细列表</div>
+    <!--采购药品名称列表-->
+    <div style="padding:5px;background:#eee;">
+        <!--显示医院的采购目录-->
+        <table id="yyypmlList"></table>
+    </div>
+</div>
+
+
+</body>
+</html>

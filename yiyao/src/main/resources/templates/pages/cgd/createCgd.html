@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>创建采购单</title>
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
+    <style>
+        .cgdInput{
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+    </style>
+
+    <script type="text/javascript" th:inline="none">
+        //定义供应药品目录列表字段
+        var columns = [[{
+            checkbox : true
+        },{
+            field : 'bm',
+            title : '药品流水号',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'ypmc',
+            title : '药品名',
+            width :120,
+            align : 'center'
+        },{
+            field : 'gysmc',
+            title : '供货企业',
+            width : 180,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :green">'+value+'</font>';
+                } else{
+                    return "";
+                }
+            }
+        },{
+            field : 'scqymc',
+            title : '生产企业名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'zbjg',
+            title : '中标价',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                return '<font style="color :red">'+value+'</font>';
+            }
+        },{
+            field : 'mony',
+            title : '零售价',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :orangered">'+value+'</font>';
+                } else{
+                    return "";
+                }
+
+            }
+        },{
+            field : 'controlmc',
+            title : '交易状态',
+            width : 80,
+            align : 'center',
+            formatter : function (value ,row,index) {
+                if (value == '正常'){
+                    return '<font style="color :green">'+value+'</font>';
+                } else{
+                    return '<font style="color :red">'+value+'</font>';
+                }
+            }
+        },{
+            field : 'mc',
+            title : '通用名',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'jx',
+            title : '剂型',
+            width : 100,
+            align : 'center'
+        },{
+            field : 'gg',
+            title : '规格',
+            width : 110,
+            align : 'center'
+        },{
+            field : 'blmc',
+            title : '药品类别',
+            width : 120,
+            align : 'center'
+        }]];
+        //采购明细列表单元格属性
+        var cgdMxColumns = [[{
+            checkbox : true
+        },{
+            field : 'bm',
+            title : '药品流水号',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (!row.id){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return value
+                }
+            }
+        },{
+            field : 'mc',
+            title : '通用名',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'gysmc',
+            title : '供货企业',
+            width : 180,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :green">'+value+'</font>';
+                } else{
+                    return "";
+                }
+            }
+        },{
+            field : 'scqymc',
+            title : '生产企业名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'zbjg',
+            title : '中标价',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return "";
+                }
+            }
+        },{
+            field : 'jyjg',
+            title : '零售价',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :orangered">'+value+'</font>';
+                } else{
+                    return "";
+                }
+
+            }
+        },{
+            field : 'lbmc',
+            title : '药品类别',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'cgl',
+            title : '采购量',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (!row.id){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    var id = row.id;
+                    return '<input type="text" id="'+row.id+'" class="easyui-numberbox editCgdCgl" min="1" max="9999999" onblur="matchCgl1(id)" name="cgl" value="'+value+'"/>';
+                }
+            }
+        },{
+            field : 'cgje',
+            title : '采购金额',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (!row.id){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return '<font style="color :green">'+value+'</font>';
+                }
+            }
+        }]];
+        //预加载
+        $(function () {
+
+
+        });
+
+        //================ 采购量输入框y验证========================
+        var matchCgl = true;
+        //校验输入的采购量是否合法
+        function  matchCgl1(id) {
+            //得到该输入框中的=值
+            var data = $("#"+id).val();
+            if (isNaN(data)|data.trim()==""){
+                $.messager.alert("信息提示","<font style='color: red;'>输入的采购量不合法!</font>",'info');
+                matchCgl = false;
+            }else{
+                if (data <=0||data>=999999){
+                    $.messager.alert("信息提示","<font style='color: red;'>输入的采购量不合法!</font>",'info');
+                    matchCgl = false;
+                } else{
+                    //发送请求更新数据库
+                    var cgl = parseInt(data);
+                    $.ajax({
+                        url :  '/cgd/cgl_update',
+                        type : 'put',
+                        dataType : 'text',
+                        data :  'cgl='+cgl+"&id="+id,
+                        success : function (result) {
+                            //刷新采购单列表
+                            $("#yyypmlList").datagrid('reload');
+                        }
+                    });
+                    matchCgl = true;
+                }
+            }
+        }
+    //========================================
+        var searchCgdMxWindowState = false;
+
+        //打开添加药品明细页面
+        function cgdxmAdd(){
+            $("#addCgdMxWindow").dialog('open');
+            //从医院药品维护目录中查询药品信息
+            $("#ypxxList").datagrid({
+                idField : 'id',
+                url : '/ypxx/yycgmls',
+                method : 'get',
+                striped : true,
+                rownumbers : true,
+                pagination : true,
+                pageList : [20,30,40],
+                columns : columns
+            });
+        }
+        //查询药品信息
+        function searchCgdMx(){
+            if (searchCgdMxWindowState){
+                return;
+            }
+            //打开查询窗口
+            $("#addCgdMxWindow").layout('expand','north');
+            clearSearchCgdMxForm();
+            searchCgdMxWindowState = true;
+        }
+        //清空查询表单中的数据
+        function clearSearchCgdMxForm() {
+            $("#searchCgdMxForm").form('clear');
+        }
+        //关闭查询窗口
+        function  cancelSearchCgdMx() {
+            $("#addCgdMxWindow").layout('collapse','north');
+            searchCgdMxWindowState = false;
+        }
+            //执行查询
+        function  doSearchCgdMx() {
+            //得到表单中的查询条件
+            var searchData = $("#searchCgdMxForm").serializeObject();
+            //条件查询药品信息
+            $("#ypxxList").datagrid('reload',{
+                gysmc : searchData.gysmc,
+                ypmc : searchData.ypmc,
+                scqymc : searchData.scqymc,
+                startMong : searchData.startMong,
+                endMong : searchData.endMong,
+                control : searchData.control,
+                jx : searchData.jx,
+                lb : searchData.lb,
+                startZbjg : searchData.startZbjg,
+                endZbjg : searchData.endZbjg
+            });
+        }
+        //取消添加
+        function cancelAddCgdMx(){
+            //关闭添加窗口
+            $("#addCgdMxWindow").dialog('close');1
+        }
+        //确认采购单
+        function saveCgdButtom(){
+
+            //判断表单中输入的数据是否合法
+            var f = $("#addCgdForm").form('validate');
+            if (!f){
+                return;
+            }
+            //得到表单中的数据
+            var data = $("#addCgdForm").serialize();
+            var bm = $("#cgdBm").val();
+            var mc = $("#cgdMc").val();
+            data +="&bm="+bm+"&mc="+mc;
+            //发送请求保存数据
+            $.ajax({
+               url : '/cgd/cgdxx_save',
+               type : 'post',
+               dataType : 'text',
+               data : data,
+               success : function(result) {
+                   //提示信息
+                   showMsg(result);
+                   //打开添加采购药品明细窗口
+                   $("#cgdmxListWindow").css('display','block');
+                   //显示采购单提交按钮 display: block
+                   $(".submitCgdButtom").css('display','inline')
+               },
+                error : function () {
+                    $.messager.alert("信息提示","系统繁忙，请稍后重试......",'info');
+                }
+            });
+        }
+        //取消添加采购单
+        function cancelAddCgd(){
+            window.location.href = "/cgd/cgdListPage";
+        }
+        //=============================采购单明细业务============
+        //添加采购药品明细信息
+        function addCgdMx(){
+            //得到选择的药品信息
+            var rows = $("#ypxxList").datagrid('getSelections');
+            if (rows.length == 0){
+                showMsg("请选择要采购的药品信息!");
+                return;
+            }
+            //得到选择的药品id
+            var ypxxids = "";
+            for(var i = 0;i<rows.length;i++){
+                if (i == 0){
+                    ypxxids +="ypxxids="+rows[i].ypxxid+","+rows[i].usergysid;
+                }else{
+                    ypxxids += "&ypxxids="+rows[i].ypxxid+","+rows[i].usergysid;
+                }
+            }
+            //得到采购单id
+            var cgdid = $("#cgdid").val();
+            // alert("cgdid->"+cgdid);
+            //添加采购药品明细
+            $.ajax({
+               url : '/cgd/cgdmx_add',
+                type : 'post',
+                dataType : 'html',
+                data : ypxxids+"&cgdid="+cgdid,
+                success : function (result) {
+                    //提示信息
+                    $.messager.alert("信息提示",result,'info');
+                    // showMsg(result);
+                    //刷新药品列表
+                    $("#ypxxList").datagrid('reload');
+                    $("#ypxxList").datagrid('clearSelections');
+                   //加载该采购单下的所有药品明细
+                    loadCgdMx(cgdid);
+                },
+                error : function () {
+                    $.messager.alert("信息提示","系统繁忙，请稍后重试......",'info');
+                }
+
+            });
+        }
+        //加载采购单下的采购药品明细
+        function loadCgdMx(cgdid){
+
+            $("#yyypmlList").datagrid({
+                idField : 'id',
+                url : '/cgd/cgdmxs?yycgdid='+cgdid,
+                method : 'get',
+                striped : true,
+                rownumbers : true,
+                pagination : true,
+                pageList : [10,20,30],
+                columns : cgdMxColumns,
+                rowStyler: function(index,row){
+                    if (!row.id){
+                        return 'background-color:#99BBE8;color:#fff;';
+                    }
+                }
+            });
+
+        }
+
+        //删除采购单明细
+        function cgdxmDelete(){
+            //得到选择的药品数据
+            var rows = $("#yyypmlList").datagrid('getSelections');
+            if (rows.length == 0){
+                showMsg("请选择要删除的采购药品！");
+                return;
+            }
+            //提示确认用户是否
+            $.messager.confirm("删除提示","确认要删除选择的药品吗？",function (f) {
+                if (!f){
+                    return;
+                }
+                var cgdmxids = "";
+                for (var i=0;i<rows.length;i++){
+                    if (i==0){
+                        cgdmxids +="cgdmxids="+rows[i].id;
+                    } else{
+                        cgdmxids +="&cgdmxids="+rows[i].id;
+                    }
+                }
+                //发送请求删除数据
+                $.ajax({
+                    url : '/cgd/cgdmx_delete',
+                    type : 'delete',
+                    dataType : 'text',
+                    data : cgdmxids,
+                    success : function (result) {
+                        showMsg(result);
+                        $("#yyypmlList").datagrid('reload');
+                        $("#yyypmlList").datagrid('clearSelections');
+                    } ,
+                    error : function () {
+                        $.messager.alert("信息提示","系统繁忙，请稍后重试.....",'info');
+                    }
+                });
+            });
+        }
+        //采购单的提交
+        //采购单的提交
+        function submitCgdButtom(){
+            //判断输入的采购量是否合法
+            if(!matchCgl){
+                showMsg("<font style='color: red;'>请输入合法的采购量信息</font>");
+                return;
+            }
+
+            //确认提交
+            $.messager.confirm("提交提示","<font style='color: red;'>是否确认提交采购单，提交后不可以再修改!</font>",function (f) {
+                if (!f){
+                    return;
+                }
+                //没有添加添加采购药品明细不能添加
+                var rows = $("#yyypmlList").datagrid("getRows");
+                if (rows.length == 0){
+                    //提示要添加采购药品
+                    $.messager.alert("提交提示","请添加要采购的药品!",'info');
+                    return;
+                }
+                //得到表单中的数据
+                var data = $("#addCgdForm").serialize();
+                //提交采购单
+                $.ajax({
+                    url : '/cgd/yycgd_submit',
+                    type : 'post',
+                    dataType : "text",
+                    data : data ,
+                    success : function (result) {
+                        //跳转到采购单维护页面
+                        window.location.href = '/cgd/cgdListPage';
+                        //提示信息
+                        showMsg(result);
+                    },
+                    error : function () {
+                        showError();
+                    }
+                })
+
+            });
+
+        }
+
+        ///==================================================
+        //自定义校验规则
+        $.extend($.fn.validatebox.defaults.rules, {
+            minlength: {
+                validator: function(value,param){
+                    if (value.length != param[0]){
+                        return false;
+                    }
+                    return true;
+                },
+                message: '请输入合法的11位电话号码'
+            }
+        });
+        //提示信息
+        function showMsg(result){
+            $.messager.show({
+                title : '信息提示',
+                msg : result,
+                timeout : 4000
+            })
+        }
+    </script>
+</head>
+<body >
+
+    <!--采购单基本信息-->
+    <div  style="background-color: #eeeeee" >
+    <!--采购单基本信息 -->
+        <form  id="addCgdForm" action="" method="post" >
+            <input type="hidden" id="cgdid" name="id" th:value="${cgd.id}"/>
+            <input type="hidden" name="useryyid" th:value="${cgd.useryyid}"/>
+            <div class="formbody">
+                <div class="formtitle"><span>创建采购单基本信息</span></div>
+                <ul class="forminfo">
+                    <table align="center">
+                        <tr class="cgdInput">
+                            <td class="cgdInput"><label class="cgdInput" >采购单编号:</label><input id="cgdBm" name="bm" th:value="${cgd.bm}" disabled="false" type="text" class=" cgdInput dfinput"  /></td>
+                            <td class="cgdInput"><label class="cgdInput" >采购单名称:</label><input id="cgdMc" th:value="${cgd.mc}" disabled="false" type="text" class=" cgdInput dfinput"/></td>
+                        </tr>
+                        <tr class="cgdInput">
+                            <td class="cgdInput"><label class="cgdInput" style="padding-right: 10px;">医院名称:</label><input id="cgdYymc" th:value="${cgd.yymc}"  disabled="false"  type="text" class=" cgdInput dfinput"  /></td>
+                            <td class="cgdInput"><label class="cgdInput" style="padding-right: 24px;">联系人:</label><input  name="lxr"  type="text" class="easyui-validatebox cgdInput dfinput" required="true" missingMessage="联系人必填！"/></td>
+                        </tr>
+                        <tr class="cgdInput">
+                            <td class="cgdInput"><label class="cgdInput" style="padding-right: 10px;">联系电话:</label><input name="lxdh" type="text" class="easyui-numberbox easyui-validatebox cgdInput  dfinput" validType="minlength[11]" required="true" missingMessage="联系电话必填!" /></td>
+                            <td class="cgdInput"><label class="cgdInput"style="padding-right: 24px;">创建人:</label><input  name="cjr"  type="text" class="cgdInput dfinput"/></td>
+                        </tr>
+                    </table>
+
+                    <li><label class="cgdInput">备注/说明</label><textarea name="bz"  style="width: 329px;height: 100px;"></textarea></li>
+
+                    <li><label style="margin-left: 220px">&nbsp;</label>
+                        <table>
+                        <tr>
+                            <input  type="button" onclick="saveCgdButtom()" class="btn saveSysUser" value="确认保存"/>
+                            <input type="button" class="btn " onclick="cancelAddCgd()" value="取消"/>
+                            <input  type="button" onclick="submitCgdButtom()" style="color: #cc933b;display: none" class="btn submitCgdButtom" value="提交采购单"/>
+                        </tr>
+                        </table>
+                    </li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+    <div id="cgdmxListWindow"  style="display: none">
+        <!--分割面板-->
+        <div   style="background:#066bac;height:24px;color: #cc933b">采购药品明细列表</div>
+        <!--采购药品名称列表-->
+        <div style="padding:5px;background:#eee;">
+
+            <div style="width: 100%;height: 32px;background: #efefef;">
+                <a shiro:hasPermission ="yycgypml_add"  href="#" class="easyui-linkbutton" onclick="cgdxmAdd()" iconCls="icon-add">添加采购药品</a>
+                <a shiro:hasPermission ="yycgypml_delete"  href="#" class="easyui-linkbutton" onclick="cgdxmDelete()" iconCls="icon-cancel">删除采购药品</a>
+            </div>
+            <!--显示医院的采购目录-->
+            <table id="yyypmlList"></table>
+        </div>
+    </div>
+    <!--采购药品添窗口-->
+    <div id="addCgdMxWindow" title="添加采购药品" class="easyui-dialog easyui-layout" closed="true" modal="true" style="width: 1300px;height: 650px;">
+        <!--查询面板-->
+        <div region="north"  title="采购药品查询条件" split="true" iconCls="icon-search"  style="width:100px;height:145px;" collapsed="true">
+            <form id="searchCgdMxForm" action="" method="post">
+                <table>
+                    <tr>
+                        <td style="padding-left: 10px;">供货企业：</td>
+                        <td >
+                            <input type="text" name="gysmc" class="easyui-combobox" url="/sys/usergysall" method="get" valueField="mc" textField="mc" style="height: 28px;"/>
+                        </td>
+                        <td style="padding-left: 10px;">药品名：</td>
+                        <td>
+                            <input type="text" name="ypmc"  style="height: 28px;"/>
+                        </td>
+                        <td style="padding-left: 10px;">生产企业名称：</td>
+                        <td>
+                            <input type="text" name="scqymc"  style="height: 28px;"/>
+                        </td>
+                        <td style="padding-left: 10px;">零售价格：
+                            <input type="text" class="easyui-numberbox" min="0" max="99999999" name="startMong" style="height: 28px;width: 90px;"/>至
+                            <input type="text" class="easyui-numberbox" min="0" max="99999999" name="endMong" style="height: 28px;width: 90px;"/>
+                        </td>
+                        <td style="padding-left: 10px;">
+                            <a href="#" onclick="clearSearchCgdMxForm()" class="easyui-linkbutton" iconCls="icon-no">清空查询条件</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-left: 10px;">交易状态:</td>
+                        <td>
+                            <input   name="control" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=003" valueField="dictcode" textField="info" type="text" class="easyui-validatebox easyui-combobox "/>
+                        </td>
+                        <td style="padding-left: 10px;">剂型:</td>
+                        <td>
+                            <input name="jx" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=jx01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox  " />
+                        </td>
+                        <td style="padding-left: 10px;">药品类别:</td>
+                        <td>
+                            <input name="lb" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=001" valueField="id" textField="info"  type="text" class="easyui-validatebox easyui-combobox " />
+                        </td>
+                        <td style="padding-left: 10px;">中标价格：
+                            <input type="text" class="easyui-numberbox" min="0" max="99999999" name="startZbjg" style="height: 28px;width: 90px;"/>至
+                            <input type="text" class="easyui-numberbox" min="0" max="99999999" name="endZbjg" style="height: 28px;width: 90px;"/>
+                        </td>
+                        <td style="padding-left: 10px;">
+                            <!--添加查询条件-->
+                            <a href="#" onclick="doSearchCgdMx()" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                            <a href="#" onclick="cancelSearchCgdMx()" class="easyui-linkbutton" iconCls="icon-no">取消</a>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+
+        <div  region="center"  style="padding:5px;background:#eee;">
+            <!--操作栏-->
+            <div style="width: 100%;height: 31px;background: #efefef;padding-top: 6px;">
+                <a  href="#" class="easyui-linkbutton" onclick="addCgdMx()" iconCls="icon-add">确认添加</a>
+                <a  href="#" class="easyui-linkbutton" onclick="cancelAddCgdMx()" iconCls="icon-cancel">取消添加</a>
+                <a  href="#" class="easyui-linkbutton" onclick="searchCgdMx()" iconCls="icon-search">药品查询</a>
+            </div>
+            <!--使用datagrid加载药瓶信息-->
+            <table id="ypxxList" ></table>
+        </div>
+    </div>
+
+
+</body>
+</html>

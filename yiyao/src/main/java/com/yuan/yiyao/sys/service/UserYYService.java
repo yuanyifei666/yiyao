@@ -15,4 +15,7 @@ public interface UserYYService {
     void updateUserYY(UserYY userYY);
 
     List<UserYY> findAll();
+
+    UserYY findById(String sysid);
+
 }

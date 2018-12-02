@@ -168,4 +168,13 @@ public class UserYYServiceImpl  implements UserYYService {
     public List<UserYY> findAll() {
         return userYYRepositoryPlus.selectList(new EntityWrapper<UserYY>());
     }
+
+    /**
+     * 根据id查询医院信息
+     * @param sysid
+     * @return
+     */
+    public UserYY findById(String sysid) {
+        return userYYRepositoryPlus.selectById(sysid);
+    }
 }

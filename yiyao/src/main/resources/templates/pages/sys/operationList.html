@@ -210,6 +210,7 @@
             $("#parent_id").val(parent_id);
         }
 
+        var current_code ;
         //打开修改权限窗口
         function editOperation(){
             cancelBut = "edit";
@@ -232,6 +233,7 @@
             parent_id =rows[0].id;
             //得到当前节点的state
             state = rows[0].state;
+            current_code =  rows[0].attributes.code;
             //得到父节点
             var parentNode = $("#operationsList").treegrid('getParent',rows[0].id);
             // 打开修改窗口
@@ -312,6 +314,15 @@
         var matchcode = true;
         //判断该code是否存在
         function matchCode(code){
+            var c = code.replace(/^\s+|\s+$/gm,'');
+            //判断是否没有修改
+            if (c == current_code){
+                matchcode = true;
+                //设置提示信息
+                $(".macthcodeMsg").html("<font style='color: green;'>code可用</font>");
+                return ;
+            }
+
             // alert("code:"+code);
             $.ajax({
                url : '/operationMatchCode/'+code,
