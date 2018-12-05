@@ -15,3 +15,6 @@ $.fn.serializeObject = function()
     });
     return o;
 };
+
+//结算单提交刷新标记
+var jsd_submit = false;

@@ -39,7 +39,7 @@ public class JdYpMLController {
     @PutMapping("/jdypml_update")
     @ResponseBody
     public String updateJdYpmlControl(YpJdDTO ypJdDTO)throws Exception{
-        //TODO 继续完成药品监控功能
+
         jdYpMLService.updateJdYpmlControl(ypJdDTO);
         return "修改成功!";
     }

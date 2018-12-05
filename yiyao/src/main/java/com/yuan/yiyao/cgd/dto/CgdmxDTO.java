@@ -31,4 +31,9 @@ public class CgdmxDTO extends CgdMxVO {
     private Integer rkl;
     private Date ypyxq;
 
+    private Float startMong;
+    private Float endMong;
+    private Float startZbjg;
+    private Float endZbjg;
+
 }

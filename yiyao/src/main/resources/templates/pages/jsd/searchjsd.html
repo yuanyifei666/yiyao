@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>查看结算单详情页面</title>
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
+
+    <style>
+        .cgdInput{
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+    </style>
+
+    <script type="text/javascript" th:inline="none">
+
+        var jsdmxColumns = [[{
+            checkbox : true
+        },{
+            field : 'bm',
+            title : '药品流水号',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (!row.id){
+                    return '<font style="color :red">'+value+'</font>';
+                } else{
+                    return value
+                }
+            }
+        },{
+            field : 'mc',
+            title : '通用名',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'cgdbm',
+            title : '采购单编号',
+            width : 120,
+            algin : 'center'
+        },{
+            field : 'cgdmc',
+            title : '采购单名称',
+            width : 200
+        },{
+            field : 'scqymc',
+            title : '生产企业名称',
+            width : 200,
+            align : 'center'
+        },{
+            field : 'jsl',
+            title : '结算量',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                var id = row.id;
+                var rkl = row.rkl;
+                var f = "matchJsl('"+id+"','"+rkl+"')";
+                if (id){
+                    return '<input type="text" disabled="false" style="width: 96px;height: 18px;" id="'+id+'" onblur="'+f+'" value="'+value+'" name="jsl"/>';
+                } else {
+                    return '<font style="color: red;">'+value+'</font>';
+                }
+
+            }
+        },{
+            field : 'jsje',
+            title : '结算金额',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                var id = row.id;
+                if (id){
+                    return '<input type="text" style="width: 96px;height: 18px;" name="jsje" disabled="false" value="'+value+'"/>';
+                } else{
+                    return '<font style="color: red;">'+value+'</font>';
+                }
+
+            }
+        },{
+            field : 'zbjg',
+            title : '中标价格',
+            width : 70,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color :orangered">'+value+'</font>';
+                } else{
+                    return "";
+                }
+
+            }
+        },{
+            field : 'rkl',
+            title : '入库量',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return '<font style="color: blueviolet">'+value+'</font>'
+                }  else{
+                    return "";
+                }
+            }
+        },{
+            field : 'rkje',
+            title : '入库金额',
+            width : 120,
+            align : 'center'
+        }]];
+
+        $(function () {
+            //得到结算单的id
+            var yyjsdid = $("#jsdid").val();
+            $("#jsdmxList").datagrid({
+                idField : 'id',
+                url : '/jsd/jsdmxs?yyjsdid='+yyjsdid,
+                method : 'get',
+                striped : true,
+                rownumbers : true,
+                pagination : true,
+                pageList : [15,20,30],
+                columns : jsdmxColumns,
+                rowStyler: function(index,row){
+                    if (!row.id){
+                        return 'background-color:#99BBE8;color:#fff;';
+                    }
+                }
+
+            });
+        });
+
+        //+=====================================
+        //取消创建结算单
+        function cancelCreateJsd(){
+            var state = $("#jsdState").val();
+            if (state == "2"){
+                //跳转到结算单查询页面
+                window.location.href = '/jsd/yyjsdSearchPage';
+            }
+            if (state == "3"){
+                //跳转到结算单受理页面
+                window.location.href = '/jsd/yyjsdAcceptPage';
+            }
+        }
+
+        //=====================全局定义====
+        //提示信息
+        function showMsg(result){
+            $.messager.show({
+                title : '提示信息',
+                msg : result,
+                timeout : 4000
+            });
+        }
+        //错误提示信息
+        function showError(){
+            $.messager.alert("系统提示","系统繁忙，请稍后重试.......",'info');
+        }
+
+        //====================结算单受理====
+        //结算单受理提交
+        function jsdAcceptSubmit(){
+            //受理状态必选
+            var accept_zt = $("#jsdaccept_state").val();
+            if (accept_zt == "000"){
+                showMsg("请选择该结算单的受理状态!");
+                return;
+            }
+            //得到表单中的数据
+            var data = $("#createJsdForm").serialize();
+            //提交受理
+            $.ajax({
+               url : '/jsd/yyjsdaccept_submit',
+               type : 'put',
+                data : data,
+                success : function (result) {
+                    //跳转到结算单受理页面
+                    window.location.href = '/jsd/yyjsdAcceptPage?sub=1';
+                },
+                error : function (){
+                    showError();
+                }
+            });
+        }
+
+
+    </script>
+
+</head>
+<body>
+<!--结算单单基本信息-->
+<div  style="background-color: #eeeeee" >
+    <!--采购单基本信息 -->
+    <form  id="createJsdForm" action="" method="post" >
+        <input type="hidden" id="jsdid" name="id" th:value="${jsd.id}"/>
+        <input type="hidden" id="jsdState"  th:value="${jsd.state}"/>
+        <input type="hidden" name="useryyid" th:value="${jsd.useryyid}"/>
+        <input type="hidden" id="usergysid" name="usergysid" th:value="${jsd.usergysid}"/>
+        <div class="formbody">
+            <div class="formtitle">
+                <span th:if="${jsd.state}=='2'">查看结算单基本信息</span>
+                <span th:if="${jsd.state}=='3'">结算单受理</span>
+            </div>
+            <ul class="forminfo">
+                <table align="center">
+                    <tr class="cgdInput">
+                        <td class="cgdInput"><label class="cgdInput" >结算单编号:</label><input id="jsdBm"  th:value="${jsd.bm}" disabled="false" type="text" class=" cgdInput dfinput"  /></td>
+                        <td class="cgdInput"><label class="cgdInput" >结算单名称:</label><input id="jsdMc" th:value="${jsd.mc}" disabled="false" type="text" class=" cgdInput dfinput"/></td>
+                    </tr>
+                    <tr class="cgdInput">
+                        <td class="cgdInput"><label class="cgdInput" style="padding-right: 10px;">医院名称:</label><input id="cgdYymc" th:value="${jsd.yymc}"  disabled="false"  type="text" class=" cgdInput dfinput"  /></td>
+                        <td class="cgdInput"><label class="cgdInput" style="padding-right: 24px;">联系人:</label><input  name="lxr"  type="text" disabled="false" th:value="${jsd.lxr}" class="easyui-validatebox cgdInput dfinput" required="true" missingMessage="联系人必填！"/></td>
+                    </tr>
+                    <tr class="cgdInput">
+                        <td class="cgdInput"><label class="cgdInput" style="padding-right: 10px;">联系电话:</label><input name="lxdh" type="text" disabled="false" th:value="${jsd.lxdh}" class="easyui-numberbox easyui-validatebox cgdInput  dfinput" validType="minLength[11]" required="true" missingMessage="联系电话必填!" /></td>
+                        <td class="cgdInput"><label class="cgdInput"style="padding-right: 24px;">创建人:</label><input  name="cjr"  type="text" disabled="false" th:value="${jsd.cjr}" class="cgdInput dfinput"/></td>
+                    </tr>
+                </table>
+
+                <li>
+                    <!--医院结算单查看名称-->
+                    <table th:if="${jsd.state}=='2'">
+                        <tr>
+                            <td><label class="cgdInput">备注/说明:</label><textarea disabled="false"  name="bz"  style="width: 329px;height: 100px;">[[${jsd.bz}]]</textarea></td>
+                            <td><label class="cgdInput">结算的供应商:</label><input type="text" style="width: 180px;" class="dfinput" th:value="${jsd.gysmc}" disabled="false"/></td>
+                        </tr>
+                 </table>
+                    <!--供应商受理明细查看-->
+                    <table th:if="${jsd.state}=='3'">
+                        <tr>
+                            <td><label class="cgdInput">备注/说明:</label><textarea disabled="false"  name="bz"  style="width: 255px;height: 100px;">[[${jsd.bz}]]</textarea></td>
+                            <td><label class="cgdInput">受理意见:</label><textarea   name="slyj"  style="width: 255px;height: 100px;">[[${jsd.slyj}]]</textarea></td>
+                            <td>
+                                <label class="cgdInput" style="margin-right: -24px">受理状态:</label>
+                                <select id="jsdaccept_state" style="width: 100px;height: 37px" name="zt">
+                                    <option value="000">--请选择受理----</option>
+                                    <option value="4">受理通过</option>
+                                    <option value="3">受理不通过</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                </li>
+
+                <li><label style="margin-left: 220px">&nbsp;</label>
+                    <table>
+                        <tr>
+                            <input th:if="${jsd.state}=='3'" type="button" class="btn " onclick="jsdAcceptSubmit()" value="受理提交"/>
+                            <input type="button" class="btn " onclick="cancelCreateJsd()" value="取消"/>
+                        </tr>
+                    </table>
+                </li>
+            </ul>
+        </div>
+    </form>
+</div>
+
+<!--结算药品药品明细列表-->
+<div id="jsdmxListWindow"  >
+    <!--分割面板-->
+    <div   style="background:#066bac;height:24px;color: #cc933b">结算药品明细列表</div>
+    <!--结算药品名称列表-->
+    <div style="padding:5px;background:#eee;">
+        <!--显示医院的采购目录-->
+        <table id="jsdmxList"></table>
+    </div>
+</div>
+
+</body>
+</html>

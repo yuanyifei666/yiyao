@@ -95,6 +95,16 @@
                 pageList : [20,30,40],
                 columns : columns
             });
+
+            //得到请求url
+            var l = window.location.href;
+            if (l.indexOf('?')!=-1){
+                $.messager.show({
+                    title : '信息提示',
+                    msg : '采购单提交成功！',
+                    timeout : 4000
+                });
+            }
 //////////////////////////////////////////
         });
 

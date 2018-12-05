@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>医院结算单维护页面</title>
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+
+        //定义采购单列表单元字段
+        var columns = [[{
+            checkbox : true
+        },{
+            field : 'bm',
+            title : '结算单编号',
+            width : 150,
+            align : 'center'
+        },{
+            field : 'mc',
+            title : '结算单名称',
+            width : 220
+        },{
+            field : 'lxr',
+            title : '联系人',
+            width : 120,
+            align : 'center'
+        },{
+            field : 'lxdh',
+            title : '联系电话',
+            width : 130,
+            align : 'center'
+        },{
+            field : 'cjr',
+            title : '建单人',
+            width :120,
+            align : 'center'
+        },{
+            title : '建单时间',
+            field : 'cjtime',
+            width : 180,
+            align : 'center'
+
+        },{
+            field : 'zt',
+            title : '结算单状态',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value =="1") {
+                    return '<font style="color :orange">未提交</font>';
+                }
+                if (value =="2") {
+                    return '<font style="color :blueviolet">待受理</font>';
+                }
+                if (value =="3") {
+                    return '<font style="color :red">受理不通过</font>';
+                }
+                if (value =="4") {
+                    return '<font style="color :darkturquoise">待结算</font>';
+                }
+                if (value =="5") {
+                    return '<font style="color :green">已结算</font>';
+                }
+            }
+        }, {
+            field: 'bz',
+            title: '备注/说明',
+            width: 220,
+            align: 'center'
+        },{
+            field : 'id',
+            title : '操作',
+            width : 120,
+            align : 'center',
+            formatter : function (value,row,index) {
+                if (value){
+                    return "<a href='/jsd/jsdEditPage?yyjsdid="+row.id+"' style='color: green'>修改</a>";
+                }
+            }
+        } ]];
+
+        $(function () {
+           //加载结算单列表
+            $("#yyjsdList").datagrid({
+                idField : 'id',
+                url : '/jsd/yyjsds',
+                method : 'get',
+                striped : true,
+                rownumbers : true,
+                pagination : true,
+                pageList : [20,30,40],
+                columns : columns
+
+            });
+
+            //得到请求url
+            var l = window.location.href;
+            if (l.indexOf('?')!=-1){
+                $.messager.show({
+                    title : '信息提示',
+                    msg : '结算单提交成功！',
+                    timeout : 4000
+                });
+            }
+        });
+        //==========================业务方法===============
+        //修改结算单
+        function jsdEdit(){
+            var rows = $("#yyjsdList").datagrid('getSelections');
+            if (rows.length != 1){
+                showMsg("请选择一条结算单进行修改!");
+                return;
+            }
+            //跳转到结算单修改页面
+            window.location.href = '/jsd/jsdEditPage?yyjsdid='+rows[0].id;
+        }
+
+        //批量删除结算单
+        function jsdDelete(){
+            //得到选择的结算单
+            var rows = $("#yyjsdList").datagrid('getSelections');
+            if (rows.length == 0){
+                showMsg("请选择要删除的结算单");
+                return ;
+            }
+          //确认删除提示
+            $.messager.confirm("删除提示","确认要删除选择的结算单吗？",function (f) {
+                if (!f){
+                    return;
+                }
+                var jsdids = "";
+                for (var i = 0;i<rows.length ;i++){
+                    var id = rows[i].id;
+                    if (i == 0){
+                        jsdids += "jsdids="+id;
+                    } else{
+                        jsdids += "&jsdids="+id;
+                    }
+                }
+                //发送请求删除数据
+                $.ajax({
+                    url : '/jsd/yyjsd_delete',
+                    type : 'delete',
+                    data : jsdids,
+                    success : function (result) {
+                        showMsg(result);
+                        $("#yyjsdList").datagrid('reload');
+                        $("#yyjsdList").datagrid('clearSelections');
+                    },
+                    error : function () {
+                        showError();
+                    }
+                });
+            });
+        }
+
+        //结算单查询
+        function jsdSearch(){
+            if (jsdSearchWindowState){
+                return;
+            }
+            //打开结算窗口
+            $("#jsdListwindow").layout('expand','north');
+            jsdSearchWindowState = true;
+            clearJsdSearchForm();
+        }
+        //清除查询表单中的数据
+        function  clearJsdSearchForm() {
+            $("#searchJsdForm").form('clear');
+        }
+        var jsdSearchWindowState = false;
+
+        //取消查询结算单
+        function cancelSearchJsd(){
+            $("#jsdListwindow").layout('collapse','north');
+            jsdSearchWindowState = false;
+        }
+        //查询结算单
+        function doSearchJsd(){
+            //得到表单中的的数据
+            var data = $("#searchJsdForm").serializeObject();
+            //查询采购单
+            $("#yyjsdList").datagrid('reload',{
+                bm : data.bm,
+                lxr : data.lxr,
+                cjr : data.cjr,
+                startCjtime : data.startCjtime,
+                endCjtime : data.endCjtime,
+                zt : data.zt
+            });
+
+        }
+
+        //////////////////////////////
+        function showMsg(msg){
+            $.messager.show({
+                title : '信息提示',
+                msg : msg,
+                timeout : 4000
+            });
+        }
+        function showError(){
+            $.messager.alert("信息提示","系统繁忙，请稍后重试........",'info');
+        }
+    </script>
+
+</head>
+<body id="jsdListwindow" class="easyui-layout">
+
+    <!--查询面板-->
+    <div region="north"  title="结算单查询条件" split="true" iconCls="icon-search"  style="width:100px;height:135px;padding-top: 10px" collapsed="true">
+        <form id="searchJsdForm" action="" method="post">
+            <table>
+                <tr>
+                    <td style="padding-left: 10px;">结算单编号：</td>
+                    <td style="padding-left: 5px;">
+                        <input type="text" name="bm"  style="width:200px;height: 28px;"/>
+                    </td>
+                    <td style="padding-left: 10px;">联系人：</td>
+                    <td>
+                        <input type="text" name="lxr"  style="height: 28px;"/>
+                    </td>
+                    <td style="padding-left:75px;">建单人：</td>
+                    <td>
+                        <input type="text" name="cjr"  style="height: 28px;"/>
+                    </td>
+
+                </tr>
+                <tr>
+                    <td style="padding-left: 10px;">建单时间：</td>
+                    <td style="padding-left: 5px;">
+                        <input type="text" class="easyui-datetimebox" editable="false" name="startCjtime" style="height: 28px;width: 90px;"/>至
+                        <input type="text" class="easyui-datetimebox" editable="false"  name="endCjtime" style="height: 28px;width: 90px;"/>
+                    </td>
+                    <td style="padding-left: 10px;">结算单状态:</td>
+                    <td>
+                        <input   name="zt" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=014" valueField="dictcode" textField="info" type="text" class="easyui-validatebox easyui-combobox "/>
+                    </td>
+                    <td style="padding-left: 10px;">
+                        <a href="#" onclick="clearJsdSearchForm()" class="easyui-linkbutton" iconCls="icon-no">清空查询条件</a>
+                    </td>
+                    <td style="padding-left: 10px;">
+                        <!--添加查询条件-->
+                        <a href="#" onclick="doSearchJsd()" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                        <a href="#" onclick="cancelSearchJsd()" class="easyui-linkbutton" iconCls="icon-no">取消</a>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+
+    <div region="center" style="padding:5px;background:#eee;">
+            <div style="padding-top: 10px;width: 100%;height: 32px;background: #efefef;">
+                <a shiro:hasPermission ="yyjsd_add"  href="#" th:href="@{/jsd/jsdCreatePage}" class="easyui-linkbutton"  iconCls="icon-add">结算单创建</a>
+                <a shiro:hasPermission ="yyjsd_update"  href="#" class="easyui-linkbutton" onclick="jsdEdit()" iconCls="icon-edit">结算单修改</a>
+                <a shiro:hasPermission ="yyjsd_delete"  href="#" class="easyui-linkbutton" onclick="jsdDelete()" iconCls="icon-cancel">结算单删除</a>
+                <a shiro:hasPermission ="yyjsd_search"  href="#" class="easyui-linkbutton" onclick="jsdSearch()" iconCls="icon-search">结算单查询</a>
+            </div>
+            <!--显示结算单类表    -->
+            <table id="yyjsdList" ></table>
+    </div>
+</body>
+</html>

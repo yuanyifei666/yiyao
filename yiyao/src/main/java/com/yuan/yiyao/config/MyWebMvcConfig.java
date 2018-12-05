@@ -1,6 +1,7 @@
 package com.yuan.yiyao.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
@@ -55,6 +56,15 @@ public class MyWebMvcConfig extends WebMvcConfigurerAdapter {
         registry.addViewController("/cgd/gysCgdPage").setViewName("pages/cgd/cgdAcceptList");
         //跳转到采购受理页面
         registry.addViewController("/cgd/yprkPage").setViewName("pages/cgd/yprkList");
+        //跳转到结算单维护页面
+        registry.addViewController("/jsd/yyjsdPage").setViewName("pages/jsd/yyjsdList");
+        //跳转到结算单查询页面页面
+        registry.addViewController("/jsd/yyjsdSearchPage").setViewName("pages/jsd/yyjsdSearchList");
+        //跳转到结算单受理页面
+        registry.addViewController("/jsd/yyjsdAcceptPage").setViewName("pages/jsd/yyjsdAcceptList");
+
+        //跳转到结算单支付页面
+        registry.addViewController("/jsd/yyjsdzfPage").setViewName("pages/jsd/yyjsdzfList");
 
 
     }
@@ -65,5 +75,12 @@ public class MyWebMvcConfig extends WebMvcConfigurerAdapter {
         //文件磁盘图片url 映射
         //配置server虚拟路径，handler为前台访问的目录，locations为files相对应的本地路径
         registry.addResourceHandler("/upload/**").addResourceLocations("file:///d:/");
+    }
+
+    //实现跨域请求
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/jsd/**").allowedOrigins("http://localhost");
     }
 }
