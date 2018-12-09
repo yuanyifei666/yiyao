@@ -3,6 +3,8 @@ package com.yuan.yiyao.operation.controller;
 import com.yuan.yiyao.operation.dto.OperationDTO;
 import com.yuan.yiyao.operation.service.OperationService;
 import com.yuan.yiyao.operation.vo.Operation;
+import com.yuan.yiyao.user.vo.SysUser;
+import com.yuan.yiyao.utils.SysUserUtile;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
@@ -14,6 +16,7 @@ import org.springframework.expression.spel.ast.OperatorNot;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
@@ -36,11 +39,16 @@ public class OperationController {
     @PostMapping("/operations")
     @ResponseBody
     public List<OperationDTO> operationList(@RequestParam(name = "id",required = false) Integer id,
-                                                @RequestParam(name = "code")Integer code)throws Exception{
+                                            @RequestParam(name = "code")Integer code, HttpServletRequest request)throws Exception{
         logger.trace("operation--->id:"+id);
-        List<OperationDTO> list = operationService.findByParentId(id,code);
-        logger.trace("list----->"+list.size());
-        return list;
+        //得到当前登录的用户信息
+        SysUser user = SysUserUtile.getSysUser(request);
+        if (user != null){
+            List<OperationDTO> list = operationService.findByParentId(id,code,user.getUsername());
+            logger.trace("list----->"+list.size());
+            return list;
+        }
+      return null;
     }
     /**
      * 添加权限

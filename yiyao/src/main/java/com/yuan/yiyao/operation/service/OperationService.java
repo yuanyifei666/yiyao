@@ -6,7 +6,7 @@ import com.yuan.yiyao.operation.vo.Operation;
 import java.util.List;
 
 public interface OperationService {
-    List<OperationDTO> findByParentId(Integer parent_id,Integer code);
+    List<OperationDTO> findByParentId(Integer parent_id,Integer code,String username);
 
     void save(Operation operation );
 

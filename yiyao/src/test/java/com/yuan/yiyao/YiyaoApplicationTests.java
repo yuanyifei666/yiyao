@@ -11,6 +11,15 @@ public class YiyaoApplicationTests {
 
     @Test
     public void contextLoads() {
+
+
+    }
+
+    public static void main(String args[]){
+        double a = 71;
+        double b = 103;
+        double d = (double)71/103;
+        System.out.println(d);
     }
 
 }

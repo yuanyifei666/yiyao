@@ -65,6 +65,12 @@ public class MyWebMvcConfig extends WebMvcConfigurerAdapter {
 
         //跳转到结算单支付页面
         registry.addViewController("/jsd/yyjsdzfPage").setViewName("pages/jsd/yyjsdzfList");
+         //跳转到医院统计分析页面
+        registry.addViewController("/chars/userYYCharts").setViewName("pages/charts/userYYCharts");
+        //跳转到供应商统计分析页面
+        registry.addViewController("/charts/userGysCharts").setViewName("pages/charts/userGysCharts");
+        //跳转到药品统计分析页面
+        registry.addViewController("/charts/ypxxCharts").setViewName("pages/charts/ypxxCharts");
 
 
     }

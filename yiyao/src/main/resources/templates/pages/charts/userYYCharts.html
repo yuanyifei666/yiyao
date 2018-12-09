@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html  xmlns:th="http://www.thymeleaf.org"  xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>根据医院采购药品统计</title>
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <!--<script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>-->
+    <script type="text/javascript" th:src="@{/js/jquery1.42.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
+
+    <script type="text/javascript" th:src="@{/js/highcharts.js}"></script>
+
+    <script type="text/javascript" th:src="@{/js/modules/exporting.js}"></script>
+
+    <script type="text/javascript" th:inline="none">
+
+        $(function () {
+            var userYYPieData ;
+            //动态从后台加载数据
+            $.ajax({
+                url: '/charts/userYYPie',
+                type : 'get',
+                dataType : 'json',
+                success : function (data) {
+                    //生成饼图
+                    userYYPie(data);
+                },
+                error : function () {
+                    showError();
+                }
+            });
+            //从后台根据不同的医院采购药品统计
+            loadUserYYBar("");
+
+            //加载所有的医院列表
+            $("#useryy").combobox({
+                url : '/charts/useryys',
+                valueField : 'id',
+                textField : 'mc',
+                method : 'get',
+                onChange : function (newValue,oldValue) {
+                    // alert("value--->"+newValue);
+                    //统计该医院下的所有采购药品
+                    loadUserYYBar(newValue);
+                }
+            });
+        });
+        //////////////////////////////////////////////////////
+        //根据医院加载该医院的采购药品统计
+        function loadUserYYBar(useryyid){
+            $.ajax({
+                url: '/charts/userYYBar',
+                type : 'get',
+                dataType : 'json',
+                data : "id="+useryyid,
+                success : function (data) {
+                    //生成饼图
+                    userYYBar1(data);
+                },
+                error : function () {
+                    showError();
+                }
+            });
+        }
+
+        //根据不同的医院统计该医院下所有的采购药品
+        var userYYBar;
+        function userYYBar1(data){
+            userYYBar = new Highcharts.Chart({
+                chart: {
+                    renderTo: 'userYYBar',
+                    defaultSeriesType: 'bar'
+                },
+                title: {
+                    text: '单个医院下的药品采购统计'
+                },
+                subtitle: {
+                    // text: 'Source: Wikipedia.org'
+                },
+                xAxis: {
+                    categories: data.ypmcs,
+                    title: {
+                        text: null
+                    }
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: '采购量(个)',
+                        align: 'high'
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return ''+
+                            this.series.name +': '+ this.y +' 个';
+                    }
+                },
+                plotOptions: {
+                    bar: {
+                        dataLabels: {
+                            enabled: true
+                        }
+                    }
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'right',
+                    verticalAlign: 'top',
+                    x: -100,
+                    y: 100,
+                    borderWidth: 1,
+                    backgroundColor: '#FFFFFF'
+                },
+                credits: {
+                    enabled: false
+                },
+                series: data.total
+            });
+
+        }
+        //=============================================
+        //根据医院采购统计生成饼图
+        var userYYPieChart;
+        function userYYPie(data){
+            userYYPieChart = new Highcharts.Chart({
+                chart: {
+                    renderTo: 'userYYPie',
+                    backgroundColor: '#eeeeee',
+                    margin: [50, 200, 60, 170]
+                },
+                title: {
+                    text: '医院所有采购药品统计'
+                },
+                plotArea: {
+                    shadow: null,
+                    borderWidth: null,
+                    backgroundColor: '#ffccb2'
+                },
+                tooltip: {
+                    formatter: function() {
+                        return '<b>'+ this.point.name +'</b>: '+ this.y +' %';
+                    }
+                },
+                plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        showInLegend: true,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function() {
+                                if (this.y > 5) return this.point.name;
+                            },
+                            color: 'white',
+                            style: {
+                                font: '13px Trebuchet MS, Verdana, sans-serif'
+                            }
+                        }
+                    }
+                },
+                legend: {
+                    layout: 'vertical',
+                    backgroundColor: '#ffccb2',
+                    style: {
+                        left: 'auto',
+                        bottom: 'auto',
+                        right: '50px',
+                        top: '100px'
+                    }
+                    // ,
+                    // labelFormatter: function () {
+                    //     return this.name + '('+this.percentage+'%)';//在名称后面追加百分比数据
+                    // }
+
+                },
+                series: [{
+                    type: 'pie',
+                    name: 'Browser share',
+                    data: data
+                }]
+            });
+
+        }
+
+
+
+        //统一错误提示
+        function showError(){
+            $.messager.alert("信息提示","系统繁忙，请稍后重试....",'info');
+        }
+    </script>
+
+</head>
+<body>
+<!--分割面板-->
+<div   style="background:#066bac;height:24px;color: #cc933b">医院采购所有药品统计</div>
+<!--根据医院采购统计饼图-->
+<div id="userYYPie" style="background: #eeeeee; margin: 0 auto"></div>
+
+<!--分割面板-->
+<div   style="background:#066bac;height:24px;color: #cc933b">单个医院药品的采购统计</div>
+<div  style="background: #eeeeee; margin: 0 auto">
+    <div style="margin-top: 20px;margin-bottom: 20px">
+        <label style="margin-left: 20px">医院名称：</label><input type="text" id="useryy" style="width: 200px"  editable="false"  name="useryy"/>
+    </div>
+    <div id="userYYBar" style="width: 1000px; height: 400px;background: #eeeeee; margin: 0 auto"></div>
+</div>
+
+</body>
+</html>

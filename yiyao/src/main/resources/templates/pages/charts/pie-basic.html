@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html  xmlns:th="http://www.thymeleaf.org"  xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>使用hightChats生成pie图</title>
+
+		<script type="text/javascript" th:src="@{/js/jquery1.42.min.js}"></script>
+		<script type="text/javascript" th:src="@{/js/highcharts.js}"></script>
+		
+		<script type="text/javascript" th:src="@{/js/modules/exporting.js}"></script>
+
+		<script type="text/javascript" th:inline="none">
+
+
+
+			var chart;
+			$(document).ready(function() {
+				chart = new Highcharts.Chart({
+					chart: {
+						renderTo: 'container',
+						margin: [50, 200, 60, 170]
+					},
+					title: {
+						text: '医院采购药品统计'
+					},
+					plotArea: {
+						shadow: null,
+						borderWidth: null,
+						backgroundColor: '#eee'
+					},
+					tooltip: {
+						formatter: function() {
+							return '<b>'+ this.point.name +'</b>: '+ this.y +' %';
+						}
+					},
+					plotOptions: {
+						pie: {
+							allowPointSelect: true,
+                            showInLegend: true,
+							cursor: 'pointer',
+							dataLabels: {
+								enabled: true,
+								formatter: function() {
+									if (this.y > 5) return this.point.name;
+								},
+								color: 'white',
+								style: {
+									font: '13px Trebuchet MS, Verdana, sans-serif'
+								}
+							}
+						}
+					},
+					legend: {
+						layout: 'horizontal',
+						backgroundColor : '#eee',
+						floating : true,
+						style: {
+							left: 'auto',
+							bottom: 'auto',
+							right: '50px',
+							top: '350px'
+						},
+                        labelFormatter: function () {
+                            return this.name + '('+this.percentage+'%)';//在名称后面追加百分比数据
+                        }
+
+                    },
+				    series: [{
+						type: 'pie',
+						name: 'Browser share',
+						data: [
+							['Firefox1',   45.0],
+							['IE1',       26.8],
+							{
+								name: 'Chrome',    
+								y: 12.8,
+								sliced: true,
+								selected: true
+							},
+							['Safari',    8.5],
+							['Opera',     6.2],
+							['Others',   0.7]
+						]
+					}]
+				});
+			});
+				
+		</script>
+		
+	</head>
+	<body>
+
+		<div id="container" style="width: 800px; height: 400px; margin: 0 auto"></div>
+		
+				
+	</body>
+</html>

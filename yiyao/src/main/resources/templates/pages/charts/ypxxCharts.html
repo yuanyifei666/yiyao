@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"  xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <meta charset="UTF-8">
+    <title>药品统计页面</title>
+
+    <!--link标签一定要有rel="stylesheet"属性，否则无法加载到css样式-->
+    <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/icon.css}"/>
+    <link rel="stylesheet" th:href="@{/js/jquery-easyui-1.2.6/themes/default/easyui.css}"/>
+    <!--引入easy-ui开发所需的js和css-->
+
+    <!--jquery-1.7.2.min.js和jquery.easyui.min.js和easyui-lang-zh_CN.js这三个js文件有严格的先后顺序,不能交换位置,否则无法正常显示-->
+    <!--<script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery-1.7.2.min.js}"></script>-->
+    <script type="text/javascript" th:src="@{/js/jquery1.42.min.js}"></script>
+
+    <!--jquery.easyui.min.js文件一定要在jquery-1.7.2.min.js下,否则报错-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/jquery.easyui.min.js}"></script>
+
+    <!--easyui-lang-zh_CN.js该js文件一定要在query.easyui.min.js下面，否则提示框无法正常显示中文-->
+    <script type="text/javascript" th:src="@{/js/jquery-easyui-1.2.6/locale/easyui-lang-zh_CN.js}"></script>
+    <script type="text/javascript" th:src="@{/js/serializFormToJSON.js}"></script>
+
+    <script type="text/javascript" th:src="@{/js/highcharts.js}"></script>
+
+    <script type="text/javascript" th:src="@{/js/modules/exporting.js}"></script>
+
+    <script type="text/javascript">
+
+        $(function () {
+           //加载该单位下所有采购的药品名称列表
+            $("#ypxx").combobox({
+                url : '/charts/ypxxs',
+                editable : false,
+                method : 'get',
+                valueField : 'ypxxid',
+                textField : 'ypmc',
+                onChange : function (newValue,oldValue) {
+                    //根据不同的药品统计该药品的采购
+                    // alert("id-->"+newValue);
+                    loadYpxx(newValue)
+                }
+            });
+            //生成药品统计柱状图
+            loadYpxx("");
+        });
+//////////============================
+
+        //加载统计药品采购
+        function loadYpxx(ypxxid){
+            $.ajax({
+               url : '/charts/ypxxBar',
+               type : 'get',
+               dataType : 'json',
+               data : 'ypxxid='+ypxxid,
+               success : function (data) {
+                   //显示药品统计
+                   ypxxBar(data);
+               },
+                error : function () {
+                    $.messager.alert("信息提示","系统繁忙，请稍后重试.....",'info');
+                }
+            });
+
+        }
+
+        //药品统计显示
+        var ypxxChart;
+        function ypxxBar(data){
+            ypxxChart = new Highcharts.Chart({
+                chart: {
+                    renderTo: 'ypxxBar',
+                    defaultSeriesType: 'column'
+                },
+                title: {
+                    text: null
+                },
+                subtitle: {
+                    text: '药品交易统计'
+                },
+                xAxis: {
+                    categories: data.ypmcs
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: '数量(盒)'
+                    }
+                },
+                legend: {
+                    layout: 'vertical',
+                    backgroundColor: '#ffccb2',
+                    align: 'left',
+                    verticalAlign: 'top',
+                    x: 100,
+                    y: 70
+                },
+                tooltip: {
+                    formatter: function() {
+                        return ''+
+                            this.x +': '+ this.y ;
+                    }
+                },
+                plotOptions: {
+                    column: {
+                        pointPadding: 0.2,
+                        borderWidth: 0
+                    }
+                },
+                series: data.total
+            });
+        }
+
+
+    </script>
+
+
+</head>
+<body style="background-color: #eeeeee">
+
+<!--医院查询条件&ndash;&gt;-->
+<div style="margin-top: 20px;margin-bottom: 20px">
+    <label style="margin-left: 20px">药品名称：</label><input type-="text" style="width: 200px" class="easyui-combobox" name="ypxx" id="ypxx" />
+</div>
+
+<!-- 3. Add the container -->
+<div id="ypxxBar" align="center" style="width: 1000px; height: 500px; margin: 0 auto"></div>
+
+
+</body>
+</html>

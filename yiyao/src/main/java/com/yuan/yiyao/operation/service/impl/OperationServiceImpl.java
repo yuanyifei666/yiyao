@@ -29,7 +29,7 @@ public class OperationServiceImpl implements OperationService {
      * @param parent_id
      * @return
      */
-    public List<OperationDTO> findByParentId(Integer parent_id,Integer code) {
+    public List<OperationDTO> findByParentId(Integer parent_id,Integer code,String username) {
         List<Operation> list = null;
         this.parent_id = parent_id;
 
@@ -37,14 +37,14 @@ public class OperationServiceImpl implements OperationService {
         if (parent_id == null){
             if(code == 1){
                 //查询parentid=999999
-                list = repository.findByParentId(999999);
+                list = repository.findByParentId(999999,username);
             }else{
                 //查询所有根节点
                 list = repository.findByRoot();
             }
         }else{
                 //查询子节点列表
-                list = repository.findByParentId(parent_id);
+                list = repository.findByParentId(parent_id,username);
         }
         //把节点信息封装到OperationDTO对象中
         return toOperatoinDTO(list,code);
@@ -113,7 +113,7 @@ public class OperationServiceImpl implements OperationService {
         //更新权限节点信息
         repository.updateById(operation);
         //判断该节点下是否还有子节点
-        List<Operation> chirlrens = repository.findByParentId(beforeParentId);
+        List<Operation> chirlrens = repository.findByParentId(beforeParentId,null);
         if (chirlrens == null || chirlrens.size() == 0){
             //该父节点没有子节点了,把state改为open
             Operation parentNode = repository.findById(beforeParentId);
@@ -148,7 +148,7 @@ public class OperationServiceImpl implements OperationService {
                 //得到要删除节点的父节点
                 Operation parentNode = repository.findById(currentNode.getParentId());
                 //如果该节点的父节点只有当前节点，删除后要更新父节点的state为open
-                List<Operation> chilrens = repository.findByParentId(parentNode.getId());
+                List<Operation> chilrens = repository.findByParentId(parentNode.getId(),null);
 
                 System.out.println("chilrens-=------list:"+chilrens.size());
                 //TODO 批量删除有bug，不能把父节点的state改为open
@@ -169,7 +169,7 @@ public class OperationServiceImpl implements OperationService {
      */
     public void deleteBatch(Integer id){
         //查询该节点是否有子节点
-        List<Operation> chilrens = repository.findByParentId(id);
+        List<Operation> chilrens = repository.findByParentId(id,null);
         if (chilrens != null){
             for (Operation chilren:chilrens) {
                 //递归删除该节点下的所有子节点
@@ -218,7 +218,7 @@ public class OperationServiceImpl implements OperationService {
      */
     public void findChildrens(OperationDTO parentDTO){
         //查询父节点下的所有子节点
-        List<Operation> chlidrens = repository.findByParentId(parentDTO.getId());
+        List<Operation> chlidrens = repository.findByParentId(parentDTO.getId(),null);
         if (chlidrens !=null&&chlidrens.size() != 0){
         //遍历查询子节点
             List<OperationDTO> dto = new ArrayList<>();

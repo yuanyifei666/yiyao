@@ -97,4 +97,12 @@ public class UserYYController {
         return "成功修改医院信息!";
     }
 
+    /**
+     * 查询所有的医院列表信息
+     */
+    @GetMapping("/useryylist")
+    @ResponseBody
+    public List<UserYY> findUserYYList(){
+        return userYYService.findAll();
+    }
 }
