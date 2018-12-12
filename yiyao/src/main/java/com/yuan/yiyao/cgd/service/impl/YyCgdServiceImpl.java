@@ -71,12 +71,16 @@ public class YyCgdServiceImpl implements YyCgdService {
                 }else{
                     //采购单查询页面查询
                     //只查询状态为为2：已提交未审核、3：审核通过的采购单信息 采购单状态(存储数据字典：1：未提交、2：已提交未审核、3：审核通过、4：审核不通过)
-                    wrapper.in("zt",new String[]{"2","3"});
+
                     //判断当前用户是否是监督单位
                     if (!"s0101".equals(cgdDTO.getGroupid())){
                         //不是监督单位则查询当前用户的单位下的采购单
                         //查询该用户单位下的所有采购单
+                        wrapper.in("zt",new String[]{"2","3"});
                         wrapper.eq("useryyid",cgdDTO.getUseryyid());
+                    }else{
+                        //监督单位查询采购单状态为审核通过和不通过的
+                        wrapper.in("zt",new String[]{"3","4"});
                     }
                 }
 

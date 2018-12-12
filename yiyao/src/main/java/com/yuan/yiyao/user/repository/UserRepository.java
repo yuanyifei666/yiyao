@@ -17,7 +17,13 @@ public interface UserRepository {
      * @param username
      * @return
      */
-    @Select("select * from SYSUSER where  username = #{param1};")
+//    @Select("select * from SYSUSER where  username = #{param1};")
+    @Select(" SELECT SYS.* ," +
+            "   CASE " +
+            "   WHEN GROUPID = 's0101' THEN (SELECT MC FROM USERJD WHERE ID = SYS.SYSID) " +
+            "   WHEN GROUPID = 's0103' THEN ( SELECT MC FROM USERGYS WHERE ID = SYS.SYSID) " +
+            "  WHEN GROUPID = 's0104' THEN (SELECT MC FROM USERYY WHERE ID = SYS.SYSID) END SYSMC " +
+            " FROM SYSUSER SYS where  SYS.username = #{param1};")
     SysUser findByUsername(String username);
 
     /**

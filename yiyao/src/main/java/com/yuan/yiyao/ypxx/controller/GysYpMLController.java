@@ -92,7 +92,8 @@ public class GysYpMLController {
      */
     @DeleteMapping("/gysypxx_delete")
     @ResponseBody
-    public String deleteGysYpxx(String ypxxids[])throws Exception{
+    public String deleteGysYpxx(String ypxxids[],HttpServletRequest request)throws Exception{
+        //得到当前登录的药品
         //删除不供应的药品信息
         gysYpMLService.deleteGysYpxx(ypxxids);
         return "成功移除不供应的药品！";

@@ -196,10 +196,11 @@
               <a href="main.html" target="_parent"><img src="images/logo.png" title="系统首页" /></a>
               <span class="topFont" style="font-size: 34px;color: #cc933b;">医药采购系统</span>
 
-          <!-- User Area Wrapper -->
-          <div id="mws-user-tools" class="clearfix">
+
+          <div id="mws-user-tools" class="clearfix" style="padding-bottom: 0px">
+
               <!-- 用户账号信息-->
-              <div id="mws-user-info" class="mws-inset">
+              <div id="mws-user-info" class="mws-inset" >
                   <div id="mws-user-photo">
                       <img src="images/profile.jpg" alt="User Photo" />
                   </div>
@@ -213,8 +214,14 @@
                       </ul>
                   </div>
               </div>
+
+
           </div>
 
+          <div style="float: right;margin-top: 70px; position: relative ; right: -171px;" >
+              <div th:if='${session.user.sysmc} != null'><font color="white">单位：</font>【<span style="margin-right: 10px;margin-top: 5px;color: #cc933b;">[[${session.user.sysmc}]]</span>】</div>
+              <div th:if='${session.user.sysmc} == null'> <font color="white">单位：</font>【<span style="margin-right: 10px;margin-top: 5px;color: #cc933b;">系统管理员</span>】</div>
+          </div>
       </div>
     </div>
     <div region="south" border="true" split="true" style="overflow: hidden; height: 40px;">

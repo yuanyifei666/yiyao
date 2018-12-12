@@ -461,7 +461,7 @@
     <div region="north"  shiro:hasPermission ="gysypml_search"  title="供应药品查询条件" split="true" iconCls="icon-search"  style="width:100px;height:145px;" collapsed="true">
     <form id="searchGysYpxxForm" action="" method="post">
         <table>
-            <tr>
+            <tr style="padding-top: 5px;">
                 <td style="padding-left: 10px;">药品流水号：</td>
                 <td >
                     <input type="text" name="bm" style="height: 28px;"/>
@@ -482,29 +482,31 @@
                     <a href="#" onclick="clearSearchGysYpxx()" class="easyui-linkbutton" iconCls="icon-no">清空查询条件</a>
                 </td>
             </tr>
-            <tr>
-                <td style="padding-left: 10px;">单位:</td>
-                <td>
-                    <input   name="dw" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=dw01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox "/>
-                </td>
-                <td style="padding-left: 10px;">剂型:</td>
-                <td>
-                    <input name="jx" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=jx01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox  " />
-                </td>
-                <td style="padding-left: 10px;">药品类别:</td>
-                <td>
-                    <input name="lb" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=001" valueField="id" textField="info"  type="text" class="easyui-validatebox easyui-combobox " />
-                </td>
-                <td style="padding-left: 10px;">中标价格：
-                    <input type="text" class="easyui-numberbox" min="0" max="99999999" name="startZbjg" style="height: 28px;width: 90px;"/>至
-                    <input type="text" class="easyui-numberbox" min="0" max="99999999" name="endZbjg" style="height: 28px;width: 90px;"/>
-                </td>
-                <td style="padding-left: 10px;">
-                    <!--添加查询条件-->
-                    <a href="#" onclick="searchGysYpxx()" class="easyui-linkbutton " iconCls="icon-search">查询</a>
-                    <a href="#" onclick="cancelSearchGysYp()" class="easyui-linkbutton" iconCls="icon-no">取消</a>
-                </td>
+            <div style="margin-top: 10px;">
+            <tr  >
+                    <td style="padding-left: 10px;">单位:</td>
+                    <td>
+                        <input   name="dw" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=dw01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox "/>
+                    </td>
+                    <td style="padding-left: 10px;">剂型:</td>
+                    <td>
+                        <input name="jx" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=jx01" valueField="info" textField="info" type="text" class="easyui-validatebox easyui-combobox  " />
+                    </td>
+                    <td style="padding-left: 10px;">药品类别:</td>
+                    <td>
+                        <input name="lb" style="width: 146px;" editable="false"  url="/sys/dictTypes?code=001" valueField="id" textField="info"  type="text" class="easyui-validatebox easyui-combobox " />
+                    </td>
+                    <td style="padding-left: 10px;">中标价格：
+                        <input type="text" class="easyui-numberbox" min="0" max="99999999" name="startZbjg" style="height: 28px;width: 90px;"/>至
+                        <input type="text" class="easyui-numberbox" min="0" max="99999999" name="endZbjg" style="height: 28px;width: 90px;"/>
+                    </td>
+                    <td style="padding-left: 10px;">
+                        <!--添加查询条件-->
+                        <a href="#" onclick="searchGysYpxx()" class="easyui-linkbutton " iconCls="icon-search">查询</a>
+                        <a href="#" onclick="cancelSearchGysYp()" class="easyui-linkbutton" iconCls="icon-no">取消</a>
+                    </td>
             </tr>
+                </div>
         </table>
     </form>
 </div>

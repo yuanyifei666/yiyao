@@ -43,8 +43,14 @@ public class OperationServiceImpl implements OperationService {
                 list = repository.findByRoot();
             }
         }else{
+            if(code == 1){
                 //查询子节点列表
                 list = repository.findByParentId(parent_id,username);
+            }else{
+                //查询子节点列表
+                list = repository.findByCode(parent_id);
+            }
+
         }
         //把节点信息封装到OperationDTO对象中
         return toOperatoinDTO(list,code);
@@ -110,7 +116,7 @@ public class OperationServiceImpl implements OperationService {
         Operation beforeNode = repository.findById(operation.getId());
         Integer beforeParentId = beforeNode.getParentId();
         System.out.println("update-->"+beforeParentId);
-        //更新权限节点信息
+        //更新权限节点信息findOperationByZtree
         repository.updateById(operation);
         //判断该节点下是否还有子节点
         List<Operation> chirlrens = repository.findByParentId(beforeParentId,null);
@@ -148,10 +154,10 @@ public class OperationServiceImpl implements OperationService {
                 //得到要删除节点的父节点
                 Operation parentNode = repository.findById(currentNode.getParentId());
                 //如果该节点的父节点只有当前节点，删除后要更新父节点的state为open
-                List<Operation> chilrens = repository.findByParentId(parentNode.getId(),null);
+                List<Operation> chilrens = repository.findOperationZtreeByParentId(parentNode.getId(),null);
 
                 System.out.println("chilrens-=------list:"+chilrens.size());
-                //TODO 批量删除有bug，不能把父节点的state改为open
+
                 //判断该该节点下是否还有子节点
                 if (chilrens == null||chilrens.size()==0){
                     //把该节点的state该为open
@@ -169,7 +175,7 @@ public class OperationServiceImpl implements OperationService {
      */
     public void deleteBatch(Integer id){
         //查询该节点是否有子节点
-        List<Operation> chilrens = repository.findByParentId(id,null);
+        List<Operation> chilrens = repository.findOperationZtreeByParentId(id,null);
         if (chilrens != null){
             for (Operation chilren:chilrens) {
                 //递归删除该节点下的所有子节点
@@ -218,7 +224,7 @@ public class OperationServiceImpl implements OperationService {
      */
     public void findChildrens(OperationDTO parentDTO){
         //查询父节点下的所有子节点
-        List<Operation> chlidrens = repository.findByParentId(parentDTO.getId(),null);
+        List<Operation> chlidrens = repository.findOperationZtreeByParentId(parentDTO.getId(),null);
         if (chlidrens !=null&&chlidrens.size() != 0){
         //遍历查询子节点
             List<OperationDTO> dto = new ArrayList<>();

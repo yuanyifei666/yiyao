@@ -27,4 +27,5 @@ public class YpxxDTO extends Ypxx {
     private Float endMong;
     private String controlmc;
     private String advice ; //监控已将
+
 }

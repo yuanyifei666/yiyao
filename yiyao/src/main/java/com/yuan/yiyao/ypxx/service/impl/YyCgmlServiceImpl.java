@@ -65,7 +65,7 @@ public class YyCgmlServiceImpl implements YyCgmlService {
         if (cgxx != null){
             for (String c:cgxx) {
                 if (c != null){
-                    String ps[] = c.split(",");
+                    String ps[] = c.split("##");
                     if (ps.length == 2){
                         dto.setYpxxid(ps[0]);
                         dto.setUsergysid(ps[1]);
@@ -75,9 +75,7 @@ public class YyCgmlServiceImpl implements YyCgmlService {
                             if ("1".equals(yp.getControl())){
                                 //判断该商品是否已经存在了
                                 List<YyCgYpmlDTO> result = repository.findYycgypmlByYpxxidAndGysUserIdAndUsergysid(dto.getYpxxid(),dto.getUsergysid(),dto.getSysid());
-                                if (result != null){
-                                   System.out.println("result---------------->"+result.size());
-                                }
+
                                 //不添加重复的药品信息
                                 if (result == null || result.size() == 0){
                                     //药品状态为正常
@@ -99,7 +97,7 @@ public class YyCgmlServiceImpl implements YyCgmlService {
             }
         }
         /////////////返回添加信息
-        if (msg != ""){
+        if (!"".equals(msg)){
             throw new MyException(msg);
         }
     }

@@ -326,6 +326,8 @@
                    $("#cgdmxListWindow").css('display','block');
                    //显示采购单提交按钮 display: block
                    $(".submitCgdButtom").css('display','inline')
+                   //加载采购单列表
+                   loadCgdMx(data.id);
                },
                 error : function () {
                     $.messager.alert("信息提示","系统繁忙，请稍后重试......",'info');
@@ -453,8 +455,9 @@
                     return;
                 }
                 //没有添加添加采购药品明细不能添加
+
                 var rows = $("#yyypmlList").datagrid("getRows");
-                if (rows.length == 0){
+                if (rows == null||rows.length == 0){
                     //提示要添加采购药品
                     $.messager.alert("提交提示","请添加要采购的药品!",'info');
                     return;
@@ -537,8 +540,8 @@
                         <table>
                         <tr>
                             <input  type="button" onclick="saveCgdButtom()" class="btn saveSysUser" value="确认保存"/>
-                            <input type="button" class="btn " onclick="cancelAddCgd()" value="取消"/>
-                            <input  type="button" onclick="submitCgdButtom()" style="color: #cc933b;display: none" class="btn submitCgdButtom" value="提交采购单"/>
+                            <input type="button" style="margin-left: 10px" class="btn " onclick="cancelAddCgd()" value="取消"/>
+                            <input  type="button" onclick="submitCgdButtom()" style="color: #cc933b;display: none;margin-left: 10px" class="btn submitCgdButtom" value="提交采购单"/>
                         </tr>
                         </table>
                     </li>

@@ -112,7 +112,6 @@ public class GysYpMLServiceImpl implements GysYpMLService {
     public void deleteGysYpxx(String[] ypxxids) {
         for (String ypxxid:ypxxids
              ) {
-            repository.deleteGysYpxx(ypxxid);
             Subject subject = SecurityUtils.getSubject();
             SysUser user = (SysUser) subject.getPrincipal();
             if (user != null){
@@ -120,6 +119,7 @@ public class GysYpMLServiceImpl implements GysYpMLService {
                 String sysid = user.getSysid();
                 System.out.println("-------------------sysid:"+sysid);
                 //同步删除监控药品表的药品信息
+                repository.deleteGysYpxx(ypxxid,sysid);
                 jdYpMLRepository.deleteJdYpxx(ypxxid,sysid);
             }
 

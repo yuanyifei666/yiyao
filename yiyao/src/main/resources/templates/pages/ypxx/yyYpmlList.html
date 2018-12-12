@@ -322,32 +322,38 @@
                 showMsg("请选择要添加药品信息！");
                 return;
             }
-            //得到选择的药品id，和供货商id
-            var data = "";
-            for (var i=0;i<rows.length;i++){
-                if (i==0){
-                    data += 'cgxx='+rows[i].ypxxid+','+rows[i].usergysid;
-                }else{
-                    data += '&cgxx='+rows[i].ypxxid+','+rows[i].usergysid;
+            //添加确认提示
+            $.messager.confirm("确认提示","确认添加选择的药品？",function (f) {
+               if (!f){
+                   return;
+               }
+                //得到选择的药品id，和供货商id
+                var data = "";
+                for (var i=0;i<rows.length;i++){
+                    if (i==0){
+                        data += 'cgxx='+rows[i].ypxxid+'##'+rows[i].usergysid;
+                    }else{
+                        data += '&cgxx='+rows[i].ypxxid+'##'+rows[i].usergysid;
+                    }
                 }
-            }
-            //发送请求添加药品信息
-            $.ajax({
-                url : '/ypxx/yycgypml_add',
-                type : 'post',
-                dataType : 'html',
-                data : data ,
-                success : function (result) {
-                    $.messager.alert("添加提示",result ,'info');
-                    $("#ypxxList").datagrid('reload');
-                    $("#ypxxList").datagrid('clearSelections');
-                    $("#yyypmlList").datagrid('reload');
-                },
-                error : function () {
-                    $.messager.alert("信息提示","系统繁忙，请稍后重试.......",'info');
-                }
-            });
+                //发送请求添加药品信息
+                $.ajax({
+                    url : '/ypxx/yycgypml_add',
+                    type : 'post',
+                    dataType : 'html',
+                    data : data ,
+                    success : function (result) {
+                        $.messager.alert("添加提示",result ,'info');
+                        $("#ypxxList").datagrid('reload');
+                        $("#ypxxList").datagrid('clearSelections');
+                        $("#yyypmlList").datagrid('reload');
+                    },
+                    error : function () {
+                        $.messager.alert("信息提示","系统繁忙，请稍后重试.......",'info');
+                    }
+                });
 
+            });
         }
 
         function searchCgYpxx(){

@@ -33,6 +33,6 @@ public class SysUser implements Serializable {
     protected String fax;
     protected String lastupdate;
     protected String sysid;
-
+    private String sysmc;
 
 }

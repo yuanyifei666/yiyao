@@ -24,7 +24,7 @@ public interface GysYpMLRepository {
             " YPML.* ,GYS.MONY,GYS.YPMC ,JD.ADVICE ,JD.CONTROL,JD.YPXXID,JD.USERGYSID ,USERGYS.MC GYSMC  " +
             " FROM (  " +
             " SELECT " +
-            " YP.ID,YP.BM,YP.SPMC,YP.SCQYMC,YP.ZBJG,YP.ZLCC,YP.CPSM,YP.JYZT,YP.DW,YP.MC,YP.JX,YP.GG,YP.ZHXS,YP.LB,DICTLB.INFO BLMC  " +
+            "  YP.ID ,YP.BM,YP.SPMC,YP.SCQYMC,YP.ZBJG,YP.ZLCC,YP.CPSM,YP.JYZT,YP.DW,YP.MC,YP.JX,YP.GG,YP.ZHXS,YP.LB,DICTLB.INFO BLMC  " +
             "  FROM YPXX YP " +
             " LEFT JOIN DICTINFO DICTLB ON YP.LB = DICTLB.ID  " +
             "    ) YPML ,GYSYPML GYS ,GYSYPML_CONTROL JD ,USERGYS USERGYS " +
@@ -108,7 +108,7 @@ public interface GysYpMLRepository {
             " <when test='endMong !=null '>"+
             " AND GYS.MONY &lt; #{endMong} "+
             " </when>"+
-            " LIMIT #{begin},#{rows};"+
+//            " LIMIT #{begin},#{rows};"+
             " </script>")
     int findByGysYpmlCount(YpxxDTO ypxxDTO);
 
@@ -206,8 +206,8 @@ public interface GysYpMLRepository {
      * 删除不供应的药品信息
      * @param ypxxid
      */
-    @Delete("DELETE FROM GYSYPML WHERE YPXXID = #{param1};")
-    void deleteGysYpxx(String ypxxid);
+    @Delete("DELETE FROM GYSYPML WHERE YPXXID = #{param1} AND USERGYSID = #{param2};")
+    void deleteGysYpxx(String ypxxid,String sysid);
 
     /**
      * 更新药品信息

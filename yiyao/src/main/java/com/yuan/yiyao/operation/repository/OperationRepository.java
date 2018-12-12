@@ -27,7 +27,7 @@ public interface OperationRepository extends BaseMapper<Operation> {
      * @param parent_id
      * @return
      */
-//    @Select("SELECT * FROM OPERATION WHERE  PARENT_ID= #{param1};")
+
     @Select("<script>"+
             "SELECT DISTINCT OP.* FROM USERROLE UR ,SYSROLE ROLE ,ROLE_OPERATION RO,OPERATION OP " +
             " WHERE UR.ROLEID = ROLE.ID AND UR.ROLEID=RO.ROLEID AND ROLE.ID = RO.ROLEID AND RO.OPERATION = OP.ID " +
@@ -38,6 +38,12 @@ public interface OperationRepository extends BaseMapper<Operation> {
             " ORDER BY OP.ORD "+
             "</script>")
     List<Operation> findByParentId(Integer parent_id,String username);
+
+    /**
+     * 角色授权权限树根据上级id查询子权限
+     */
+    @Select("SELECT * FROM OPERATION WHERE PARENT_ID = #{param1}")
+    List<Operation> findOperationZtreeByParentId(Integer parent_id,String username);
 
     /**
      * 根据id查询
@@ -61,4 +67,11 @@ public interface OperationRepository extends BaseMapper<Operation> {
     @Select("SELECT DISTINCT URL ,CODE FROM OPERATION WHERE URL IS NOT NULL;")
     List<Operation> findOperations();
 
+    /**
+     * 根据父id查询所有的权限
+     * @param parent_id
+     * @return
+     */
+    @Select("SELECT * FROM OPERATION WHERE  PARENT_ID= #{param1};")
+    List<Operation> findByCode(Integer parent_id);
 }

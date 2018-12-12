@@ -200,8 +200,8 @@
                     <tr>
                         <td><label class="cgdInput" >备注/说明:</label></td>
                         <td><textarea disabled="false" class="cgdInput" style="width: 249px;height: 100px;">[[${cgd.bz}]]</textarea></td>
-                        <td th:if="${cgd.zt}=='3'"><label class="cgdInput" >审核意见:</label></td>
-                        <td th:if="${cgd.zt}=='3'"><textarea name="shyj" disabled="false" class="cgdInput" style="width: 249px;height: 100px;">[[${cgd.shyj}]]</textarea></td>
+                        <td th:if="${cgd.zt}=='3' or ${cgd.zt}=='4'"><label class="cgdInput" >审核意见:</label></td>
+                        <td th:if="${cgd.zt}=='3' or ${cgd.zt}=='4'"><textarea name="shyj" disabled="false" class="cgdInput" style="width: 249px;height: 100px;">[[${cgd.shyj}]]</textarea></td>
                         <td ><label class="cgdInput " >采购单状态:</label>
                             <input  disabled="false" style="color:orangered;width: 131px;height: 32px;" th:value="${cgd.ztmc}" type="text" class=" cgdInput dfinput"/>
                         </td>
